@@ -31,6 +31,7 @@ function dl(rows) {
   return h('dl', {}, rows.filter(Boolean).map(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]));
 }
 function section(title, ...content) { return h('section', { class: 'section' }, h('h2', { text: title }), ...content); }
+const wide = (el) => { el.classList.add('wide'); return el; }; // occupe toute la largeur de la grille
 function histogram(values, labels, titleOf) {
   const max = Math.max(1, ...values);
   return [
@@ -84,7 +85,10 @@ export function renderSections(root, stats, lang) {
       [L('rmRf'), fmtInt(lang, d.rmRf)], [L('forcePush'), fmtInt(lang, d.forcePush)], [L('resetHard'), fmtInt(lang, d.resetHard)],
       [L('sudo'), fmtInt(lang, d.sudo)], [L('gitCommits'), fmtInt(lang, d.gitCommits)],
     ])),
-    section(t(lang, 'sections.bill'),
+    section(t(lang, 'sections.models'),
+      dl(stats.models.slice(0, 8).map((mo) => [mo.name, `${fmtInt(lang, mo.turns)} (${fmtPct(lang, mo.share)})`])),
+      h('p', { text: `${L('versions')}${S}${t(lang, 'labels.versionsValue', { first: stats.versions.first || '–', last: stats.versions.last || '–', count: stats.versions.count })}` })),
+    wide(section(t(lang, 'sections.bill'),
       h('p', { class: 'bill-total', text: `${L('billTotal')}${S}${fmtUsd(lang, b.costUsd)}` }),
       h('div', { class: 'table-wrap' }, h('table', {},
         h('thead', {}, h('tr', {}, ['model', 'input', 'output', 'cacheRead', 'cacheWrite', 'cost'].map((k) => h('th', { text: L(k) })))),
@@ -92,9 +96,6 @@ export function renderSections(root, stats, lang) {
           h('td', { text: name }), h('td', { text: fmtInt(lang, u.input) }), h('td', { text: fmtInt(lang, u.output) }),
           h('td', { text: fmtInt(lang, u.cacheRead) }), h('td', { text: fmtInt(lang, u.cacheWrite) }), h('td', { text: fmtUsd(lang, u.costUsd) })))))),
       b.unpricedTokens ? h('p', { class: 'disclaimer', text: `${L('unpriced')}${S}${fmtInt(lang, b.unpricedTokens)}` }) : null,
-      h('p', { class: 'disclaimer', text: L('billDisclaimer') })),
-    section(t(lang, 'sections.models'),
-      dl(stats.models.slice(0, 8).map((mo) => [mo.name, `${fmtInt(lang, mo.turns)} (${fmtPct(lang, mo.share)})`])),
-      h('p', { text: `${L('versions')}${S}${t(lang, 'labels.versionsValue', { first: stats.versions.first || '–', last: stats.versions.last || '–', count: stats.versions.count })}` })),
+      h('p', { class: 'disclaimer', text: L('billDisclaimer') }))),
   );
 }

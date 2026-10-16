@@ -175,24 +175,59 @@ function download(name, blob) {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-function svgToPng(svg, scale = 2) {
+function svgToPng(svg, scale = 2, width = 1200, height = 630) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    // URL data: plutôt que blob: — les SVG à foreignObject chargés en blob: rendent le canvas
+    // illisible (« tainted ») dans certains navigateurs.
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1200 * scale; canvas.height = 630 * scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale); canvas.height = Math.round(height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+      } catch (e) { reject(e); }
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG load failed')); };
+    img.onerror = () => reject(new Error('SVG load failed'));
     img.src = url;
   });
+}
+// Bilan complet : le DOM affiché est cloné dans un SVG <foreignObject>, avec la feuille de style
+// et les valeurs calculées des variables du thème, puis rendu en PNG. Aucune ressource externe.
+function reportSvg() {
+  const src = $('report');
+  const pad = 24;
+  const inner = Math.ceil(src.getBoundingClientRect().width);
+  const clone = src.cloneNode(true);
+  clone.removeAttribute('id'); // pas de doublon d'id pendant la mesure
+  clone.querySelector('.actions')?.remove();
+  clone.querySelector('#again')?.closest('p')?.remove();
+  // Hauteur mesurée sur le clone (sans les boutons), posé hors écran à la même largeur.
+  clone.style.cssText = `position:absolute;left:-100000px;top:0;width:${inner}px`;
+  src.parentNode.append(clone);
+  const height = Math.ceil(clone.getBoundingClientRect().height) + 2 * pad;
+  clone.remove();
+  clone.removeAttribute('style');
+  const width = inner + 2 * pad;
+  const css = [...document.styleSheets].map((s) => { try { return [...s.cssRules].map((r) => r.cssText).join('\n'); } catch { return ''; } }).join('\n');
+  const root = getComputedStyle(document.documentElement), body = getComputedStyle(document.body);
+  const vars = [...new Set(css.match(/--[\w-]+(?=\s*:)/g) || [])].map((n) => `${n}:${root.getPropertyValue(n)}`).join(';');
+  const xml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const style = `${vars};background:${body.backgroundColor};color:${body.color};font-family:${body.fontFamily};font-size:${body.fontSize};line-height:${body.lineHeight};width:${width}px;height:${height}px;padding:${pad}px;box-sizing:border-box`;
+  const html = new XMLSerializer().serializeToString(clone);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject x="0" y="0" width="${width}" height="${height}">`
+    + `<div xmlns="http://www.w3.org/1999/xhtml" style="${xml(style).replace(/"/g, '&quot;')}"><style>${xml(css)}</style>${html}</div></foreignObject></svg>`;
+  return { svg, width, height };
 }
 $('png').addEventListener('click', async () => {
   try { download(`freudiff-${state.profile.code}.png`, await svgToPng(currentSvg())); }
   catch { download(`freudiff-${state.profile.code}.svg`, new Blob([currentSvg()], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
+});
+$('png-full').addEventListener('click', async () => {
+  const { svg, width, height } = reportSvg();
+  try { download(`freudiff-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
+  catch { download(`freudiff-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
 $('copy').addEventListener('click', async () => {
   try {
