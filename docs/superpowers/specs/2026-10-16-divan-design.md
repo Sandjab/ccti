@@ -54,7 +54,9 @@ Page unique, trois états.
 - Aide « Où est mon dossier ? » : macOS `~/.claude/projects` (dans le sélecteur,
   `Cmd+Shift+.` affiche les dossiers cachés, ou `Cmd+Shift+G` et coller le
   chemin) ; Windows `%USERPROFILE%\.claude\projects` ; Linux `~/.claude/projects`.
-- Bouton « Voir un exemple » : charge un `demo.json` embarqué et affiche l'état 3.
+- Bouton « Voir un exemple » : charge des stats synthétiques embarquées
+  (`demo.js`) et affiche l'état 3. Les chiffres réels de Jean-Paul ne sont
+  publiés qu'après sa validation (§ 12).
 - Sélecteur de langue FR/EN (détection navigateur, mémorisée en localStorage dans
   un try/catch) et thème clair/sombre (préférence système, surcharge manuelle).
 
@@ -201,7 +203,9 @@ conservé**, ni dans l'état mémoire, ni dans le JSON exporté. Un test l'impos
 Compteur = nombre de **blocs** (texte assistant ou message humain) qui
 correspondent à au moins une regex de la liste (insensible à la casse, flag `i`,
 et `m` quand `^` est utilisé). Un bloc compte 1 même s'il contient plusieurs
-occurrences.
+occurrences. Les `\b` ci-dessous sont implémentés par des lookarounds Unicode
+(`(?<![\p{L}\p{N}])` … `(?![\p{L}\p{N}])`, flag `u`) car le `\b` natif de
+JavaScript ignore les lettres accentuées (« désolé » ne matcherait pas).
 
 **`claudeAgreed` — Claude vous a donné raison** (texte assistant) :
 ```
@@ -239,7 +243,7 @@ ratio majuscules / lettres ≥ 0,8.
 
 **`humanThanks` — vos mercis** :
 ```
-/\b(merci|thanks|thank you|thx|bravo|parfait|nickel|top|super|génial|excellent|impeccable|great job|well done|awesome|perfect)\b/
+/\b(merci|thanks|thank you|thx|bravo|parfait|nickel|génial|excellent|impeccable|great job|well done|awesome|perfect)\b/
 ```
 
 **`humanDoubleMarks`** : `/!{2,}|\?{2,}/`.
@@ -261,8 +265,9 @@ fichier).
 **`rageQuits`** : sessions principales dont le **dernier** message humain
 correspond à `humanNo`, `humanCaps` ou `humanSwear`.
 
-**`talkRatio`** : Σ longueurs propres humaines / Σ longueurs des blocs texte
-assistant (sur les sessions principales). Affiché « vous parlez X % du temps ».
+**`talkRatio`** : Σ longueurs propres humaines / (Σ longueurs propres humaines +
+Σ longueurs des blocs texte assistant), sessions principales. Affiché « vous
+parlez X % du temps ».
 
 **`patienceMedianSec`** : pour chaque message humain précédé d'un tour assistant
 dans la même session, délai en secondes ; on ne retient que les délais < 3 600 s ;
@@ -345,7 +350,7 @@ Si `humanMessages` < 20, le type est calculé quand même mais marqué
 ### 5.1 Les 16 types (ton mordant : piquant, affectueux, jamais méprisant)
 
 Chaque type a un nom FR/EN et trois phrases FR/EN. Les textes ci-dessous sont
-**normatifs** : ils vont tels quels dans `src/i18n/fr.json` et `en.json`.
+**normatifs** : ils vont tels quels dans `src/i18n/fr.js` et `en.js`.
 
 **CVPD — Le Contremaître / The Foreman**
 FR : Vous écrivez des cahiers des charges à une machine qui lit dix mille mots à la seconde, puis vous relisez chaque ligne qu'elle produit. Ce n'est pas de la méfiance, c'est de la méthode. Vos projets finissent, et dans ce métier c'est déjà une excentricité.
@@ -444,7 +449,9 @@ thème). `{n}` est remplacé par la valeur formatée. Textes normatifs.
 | `patience` | `patienceMedianSec ≤ 20` | Vous répondez en {n} s en médiane. Vous ne lisez pas ses réponses. Lui non plus, d'ailleurs. | You reply in {n}s median. You don't read its answers. Neither does it, to be fair. |
 | `work` | `claudeWorkMinutes ≥ 6000` | Claude a travaillé {n} heures pour vous. Sans pause, sans syndicat, sans ticket-restaurant. | Claude worked {n} hours for you. No breaks, no union, no lunch vouchers. |
 
-Formats : pourcentages entiers, durées « 4 h 12 », coûts « 1 234 $ » (FR) / « $1,234 » (EN), nombres avec séparateur de milliers selon la langue.
+Formats : pourcentages entiers, durées « 4 h 12 », coûts « 1 234 $ » (FR) / « $1,234 » (EN), nombres avec séparateur de milliers selon la langue. Le `{n}` est
+inséré **déjà formaté avec son unité** (« 15 % », « 1 234 $ », « 4 h 12 »,
+« 12 s ») ; les textes ne répètent donc pas l'unité.
 
 ## 6. La carte
 
@@ -480,11 +487,11 @@ divan/
     profile.js               # axes, code de type, observations (ids) § 5
     card.js                  # renderCard(stats, profile, {lang, theme}) → string SVG
     render.js                # DOM du bilan (sections § 2, état 3)
-    i18n.js + i18n/fr.json + i18n/en.json   # UI, types, observations, formats
+    i18n.js + i18n/fr.js + i18n/en.js       # UI, types, observations, formats (modules ES, pas de JSON importé)
     worker.js                # lecture des fichiers, Analyzer, progress/result
     main.js                  # états, picker, drag&drop, worker, exports, langue, thème
     styles.css
-    demo.json                # stats de démo (bouton « Voir un exemple »)
+    demo.js                  # stats de démo synthétiques (bouton « Voir un exemple »)
   scripts/
     build.mjs                # inline CSS/JS/JSON → dist/divan.html (fichier unique)
     gen-fixtures.mjs         # génère tests/fixtures/projects/** (JSONL synthétiques)
@@ -555,8 +562,9 @@ page (« Télécharger la version hors ligne »). Le site Pages sert `index.html
 
 ### 7.4 Internationalisation et thème
 
-- `fr.json` / `en.json` : toutes les chaînes UI, noms et textes des 16 types,
-  observations, libellés des axes, unités. Clé manquante → clé affichée (test).
+- `fr.js` / `en.js` (objets exportés par défaut) : toutes les chaînes UI, noms et
+  textes des 16 types, observations, libellés des axes, unités. Clé manquante →
+  clé affichée (test de parité des clés).
 - Langue : `navigator.language` commence par `fr` → FR, sinon EN ; bouton de
   bascule ; mémorisation `localStorage` dans try/catch.
 - Thème : `prefers-color-scheme`, surcharge manuelle `data-theme`, variables CSS
@@ -600,7 +608,7 @@ page (« Télécharger la version hors ligne »). Le site Pages sert `index.html
 - `privacy.test.js` : sur le JSON produit par le CLI sur les fixtures, aucune
   string > 80 caractères hors `meta`, et aucune string contenant `/` ou `\\`
   (pas de chemin).
-- `i18n` : mêmes clés dans `fr.json` et `en.json`.
+- `i18n` : mêmes clés dans `fr.js` et `en.js`.
 
 **Fixtures** (`scripts/gen-fixtures.mjs`, déterministes, commitées) : ≥ 8
 sessions couvrant session vide, session avec 2 sous-agents, lignes corrompues,
@@ -655,6 +663,10 @@ durée < 5 min.
 - **`docs/launch-posts.md`** : Show HN (titre + deux paragraphes), X (3 variantes
   EN, 1 FR), LinkedIn FR (ton direct, structuré, amical, une pointe d'humour).
 - Jean-Paul publie lui-même ; rien n'est posté par Claude.
+- Les chiffres réels (CLI sur `~/.claude/projects`), la carte réelle et l'article
+  rempli sont produits dans `private/` (gitignoré) et attendent la validation de
+  Jean-Paul avant tout commit. Le README et la démo publiés utilisent des stats
+  synthétiques (`demo.js`).
 
 ## 13. Risques et cas limites
 
