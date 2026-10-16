@@ -105,3 +105,20 @@ test('result() sur un analyseur vide ne lève pas', () => {
   assert.equal(r.volume.sessions, 0); assert.equal(r.bill.costUsd, 0); assert.equal(r.moments.latestHour, null);
   assert.equal(r.volume.medianCleanLength, 0); assert.equal(r.couple.talkRatio, 0);
 });
+
+test('listSessionFiles lit les sous-agents de workflow rangés sous subagents/workflows/', async () => {
+  // Format réel observé : <session>/subagents/workflows/wf_<id>/agent-<id>.jsonl (outil Workflow).
+  // Sans eux, les deux tiers des sous-agents d'un utilisateur de workflows disparaissent de la facture.
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const path = (await import('node:path')).default;
+  const root = mkdtempSync(path.join(tmpdir(), 'freudiff-wf-'));
+  const proj = path.join(root, '-Users-x-Dev-a');
+  mkdirSync(path.join(proj, 's1', 'subagents', 'workflows', 'wf_1-2'), { recursive: true });
+  writeFileSync(path.join(proj, 's1.jsonl'), '\n');
+  writeFileSync(path.join(proj, 's1', 'subagents', 'agent-a.jsonl'), '\n');
+  writeFileSync(path.join(proj, 's1', 'subagents', 'workflows', 'wf_1-2', 'agent-b.jsonl'), '\n');
+  const files = await listSessionFiles(root);
+  assert.deepEqual(files.map((f) => [f.kind, f.sessionId, path.basename(f.path)]).sort(),
+    [['main', 's1', 's1.jsonl'], ['subagent', 's1', 'agent-a.jsonl'], ['subagent', 's1', 'agent-b.jsonl']]);
+});

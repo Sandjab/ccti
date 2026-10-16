@@ -24,8 +24,9 @@ export async function listSessionFiles(root) {
       } else if (e.isDirectory()) {
         const sub = path.join(dir, e.name, 'subagents');
         let files = [];
-        try { files = await readdir(sub); } catch { continue; }
-        for (const f of files) if (f.endsWith('.jsonl')) out.push({ path: path.join(sub, f), slug: slug.name, kind: 'subagent', sessionId: e.name });
+        // récursif : les agents de workflow sont rangés sous subagents/workflows/wf_*/ (spec § 3.1)
+        try { files = await readdir(sub, { recursive: true }); } catch { continue; }
+        for (const f of files.sort()) if (f.endsWith('.jsonl')) out.push({ path: path.join(sub, f), slug: slug.name, kind: 'subagent', sessionId: e.name });
       }
     }
   }
