@@ -1,11 +1,11 @@
-# Divan — spec de conception
+# Freudiff — spec de conception
 
 Date : 2026-10-16 (nuit du 16 au 17). Auteur du brief : Jean-Paul Gavini. Rédaction : Claude.
 Statut : validée en brainstorm (projet, forme, nom, ton, autorisations).
 
 ## 1. Résumé
 
-**Divan** met votre binôme dev ↔ Claude Code sur le divan. C'est une page web
+**Freudiff** met votre binôme dev ↔ Claude Code sur le divan. C'est une page web
 locale (GitHub Pages + fichier HTML autonome) dans laquelle on glisse son dossier
 `~/.claude/projects`. Tout est analysé dans le navigateur, sans aucune requête
 réseau. Le résultat : un **type de personnalité** parmi 16 (quatre axes mesurés),
@@ -16,7 +16,7 @@ un **diagnostic mordant**, et une **carte SVG/PNG partageable**.
 Tagline EN : *Put your Claude Code relationship on the couch.*
 Tagline FR : *Allongez votre binôme Claude Code sur le divan.*
 
-URL : `https://sandjab.github.io/divan` — dépôt public `Sandjab/divan`, licence MIT.
+URL : `https://sandjab.github.io/freudiff` — dépôt public `Sandjab/freudiff`, licence MIT.
 
 ### Objectifs
 
@@ -38,7 +38,7 @@ URL : `https://sandjab.github.io/divan` — dépôt public `Sandjab/divan`, lice
 Le créneau « stats Claude Code » est occupé (cc-wrapped, claude-code-wrapped,
 vibestats, agentboard, claude-analytics, ccusage). Tous font des stats de
 tokens/coût. Aucun ne fait de profil de personnalité, de compteurs relationnels
-bilingues, ni de diagnostic humoristique. Divan ne concurrence pas ccusage sur la
+bilingues, ni de diagnostic humoristique. Freudiff ne concurrence pas ccusage sur la
 facture : la facture est un chiffre parmi d'autres.
 
 ## 2. Parcours utilisateur
@@ -87,7 +87,7 @@ Page unique, trois états.
      coût API équivalent total et par modèle, disclaimer.
    - **Les modèles** : modèles rencontrés avec part des tours, versions de Claude
      Code traversées (première → dernière, nombre).
-4. Pied : « Divan ne stocke rien, n'envoie rien. Code source : github.com/Sandjab/divan ».
+4. Pied : « Freudiff ne stocke rien, n'envoie rien. Code source : github.com/Sandjab/freudiff ».
 
 ## 3. Données d'entrée
 
@@ -458,11 +458,11 @@ inséré **déjà formaté avec son unité** (« 15 % », « 1 234 $ », « 4 h 
 - SVG `1200 × 630` (format OpenGraph/X), `viewBox` identique, polices système
   (`-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`), aucune
   ressource externe.
-- Contenu : en-tête « DIVAN » + « bilan de couple dev ↔ Claude Code » ; nom du
+- Contenu : en-tête « FREUDIFF » + « bilan de couple dev ↔ Claude Code » ; nom du
   type en grand ; code à quatre lettres ; quatre jauges horizontales avec les
   deux pôles étiquetés (ex. « Contrôle ◀ ▶ Autonomie ») et un curseur au score ;
   trois chiffres : sessions, « Claude vous a donné raison », coût API équivalent ;
-  période « 11 mai → 2 oct. 2026 » ; pied « sandjab.github.io/divan ».
+  période « 11 mai → 2 oct. 2026 » ; pied « sandjab.github.io/freudiff ».
 - Deux thèmes (clair/sombre) via des variables passées au générateur, pas via
   CSS externe (le SVG doit être autonome une fois exporté).
 - Export PNG : sérialiser le SVG → `data:` URL → `Image` → `canvas` 2× (2400 ×
@@ -470,7 +470,7 @@ inséré **déjà formaté avec son unité** (« 15 % », « 1 234 $ », « 4 h 
   `ClipboardItem` si disponible, sinon message « téléchargez le PNG ».
 - Texte à partager (FR/EN) : « Mon binôme Claude Code est passé sur le divan :
   je suis « {type} » ({code}). {sessions} sessions, Claude m'a donné raison {n}
-  fois. Faites le test (rien ne quitte votre machine) : https://sandjab.github.io/divan ».
+  fois. Faites le test (rien ne quitte votre machine) : https://sandjab.github.io/freudiff ».
 
 ## 7. Architecture technique
 
@@ -478,7 +478,7 @@ HTML, CSS, JavaScript natif (ES2022, modules), **aucun framework, aucun bundler*
 Node 20+ pour les scripts et tests. Playwright en devDependency pour le e2e.
 
 ```
-divan/
+freudiff/
   index.html                 # page unique ; charge src/main.js en module
   src/
     analyzer.js              # pur, sans DOM : class Analyzer
@@ -493,12 +493,12 @@ divan/
     styles.css
     demo.js                  # stats de démo synthétiques (bouton « Voir un exemple »)
   scripts/
-    build.mjs                # inline CSS/JS/JSON → dist/divan.html (fichier unique)
+    build.mjs                # inline CSS/JS/JSON → dist/freudiff.html (fichier unique)
     gen-fixtures.mjs         # génère tests/fixtures/projects/** (JSONL synthétiques)
     cli.mjs                  # node scripts/cli.mjs <dossier> [--json out] [--lang fr]
   tests/
     patterns.test.js, pricing.test.js, analyzer.test.js, profile.test.js, privacy.test.js
-    e2e/divan.spec.js        # Playwright
+    e2e/freudiff.spec.js        # Playwright
     fixtures/                # généré, commité
   .github/workflows/ci.yml  # test → build → deploy Pages (sur main)
   README.md  README-fr.md  LICENSE  CHANGELOG.md  package.json  .gitignore
@@ -529,7 +529,7 @@ les 50 ms au plus.
 ### 7.2 Schéma de `stats` (clés principales)
 
 ```
-meta: { generatedAt, divanVersion, tz, lowConfidence }
+meta: { generatedAt, freudiffVersion, tz, lowConfidence }
 volume: { sessions, ghostSessions, projects, topProjects[], humanMessages,
           assistantTurns, toolCalls, toolsByName{}, subagents, subagentTurns,
           activeDays, firstDay, lastDay, longestStreakDays,
@@ -553,10 +553,10 @@ models: [{name, turns, share}], versions: {first, last, count}
 
 ### 7.3 Build et fichier autonome
 
-`scripts/build.mjs` produit `dist/divan.html` : CSS inliné, modules concaténés en
+`scripts/build.mjs` produit `dist/freudiff.html` : CSS inliné, modules concaténés en
 un seul script (ordre topologique, sans import/export), JSON i18n et demo
 inlinés, Worker créé à partir d'un `Blob` contenant le code de l'analyseur.
-`dist/divan.html` est publié comme artefact de release et accessible depuis la
+`dist/freudiff.html` est publié comme artefact de release et accessible depuis la
 page (« Télécharger la version hors ligne »). Le site Pages sert `index.html` +
 `src/` directement (modules ES natifs).
 
@@ -629,9 +629,9 @@ durée < 5 min.
 
 **Critères de succès du projet** :
 1. `npm test` vert, e2e vert, CI verte sur `main`.
-2. `https://sandjab.github.io/divan` répond et produit un bilan sur le dossier
+2. `https://sandjab.github.io/freudiff` répond et produit un bilan sur le dossier
    réel dans Chrome et Safari.
-3. `dist/divan.html` ouvert en `file://` produit le même bilan sur les fixtures
+3. `dist/freudiff.html` ouvert en `file://` produit le même bilan sur les fixtures
    (lecture via l'input ; pas de `fetch`).
 4. README EN/FR, article EN/FR, posts prêts ; capture de carte réelle validée par
    Jean-Paul avant inclusion.
@@ -642,7 +642,7 @@ durée < 5 min.
   --with-deps chromium`, `npm run e2e`, `npm run build` ; sur `main` : déploiement
   GitHub Pages via `actions/upload-pages-artifact` + `actions/deploy-pages`
   (racine du dépôt, en excluant `tests/`, `node_modules/`, `docs/`), et
-  `dist/divan.html` attaché comme artefact.
+  `dist/freudiff.html` attaché comme artefact.
 - Pages activé via `gh api` (`build_type: workflow`).
 - `package.json` : `"type": "module"`, scripts `test`, `e2e`, `build`,
   `fixtures`, `cli`. Seule devDependency : `@playwright/test`.
@@ -658,7 +658,7 @@ durée < 5 min.
   divan*. Structure : le constat (les outils comptent des tokens, personne ne
   compte les « non ») ; comment ça marche en trois phrases ; mes chiffres (type,
   les cinq compteurs les plus parlants, la facture, l'évolution par modèle) ; ce
-  que ça dit, en deux paragraphes mordants ; comment faire le test ; ce que Divan
+  que ça dit, en deux paragraphes mordants ; comment faire le test ; ce que Freudiff
   ne fait pas (vie privée). Les chiffres réels sont insérés après validation.
 - **`docs/launch-posts.md`** : Show HN (titre + deux paragraphes), X (3 variantes
   EN, 1 FR), LinkedIn FR (ton direct, structuré, amical, une pointe d'humour).
@@ -692,7 +692,7 @@ durée < 5 min.
 3. Déploiement Pages + CI.
 4. README EN/FR.
 5. E2E Playwright.
-6. Fichier autonome `dist/divan.html`.
+6. Fichier autonome `dist/freudiff.html`.
 7. Article, posts, démo avec chiffres réels.
 8. Peaufinage visuel.
 
@@ -700,7 +700,12 @@ durée < 5 min.
 
 - Page web locale plutôt que binaire Go : pas de Gatekeeper/SmartScreen, un lien
   suffit (validé).
-- Nom **Divan** (validé) ; `Sandjab/divan` et `Sandjab/shrink` étaient libres.
+- Nom **Freudiff** (17 oct. 2026), après Divan puis PsyClaude ; PsyClaude écarté
+  pour la marque « Claude ». Le dépôt privé `Sandjab/surprise` est renommé
+  `Sandjab/freudiff` et passe public à la mise en ligne. La métaphore « sur le
+  divan » reste dans les textes.
+- Docs publiques nettoyées avant le premier push : chemin local et chiffres réels
+  déplacés dans `private/notes.md` (gitignoré).
 - Ton **mordant** (validé).
 - Aucun LLM, aucun réseau, aucun upload (brief + Rule 5).
 - Sous-agents facturés mais exclus des métriques humaines (leurs prompts sont de Claude).
