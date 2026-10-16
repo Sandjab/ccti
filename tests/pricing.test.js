@@ -26,3 +26,8 @@ test('coût de référence', () => {
   assert.equal(costUsd(u, 'claude-weird-9'), null);
   assert.equal(costUsd({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, 'claude-sonnet-4-6'), 0);
 });
+
+test('cache écrit 1 h à 2 × l\'entrée, le reste au tarif 5 min', () => {
+  // opus-4-7 : entrée 5 $, cache 5 min 6,25 $, cache 1 h 10 $ par million
+  assert.ok(Math.abs(costUsd({ cacheWrite: 1000, cacheWrite1h: 400 }, 'claude-opus-4-7') - 0.00775) < 1e-12);
+});

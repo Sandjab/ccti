@@ -49,6 +49,8 @@ export function costUsd(usage, model) {
   const p = priceFor(model);
   if (!p) return null;
   const u = usage || {};
+  // cacheWrite = total des écritures ; cacheWrite1h = la part en TTL 1 h, facturée 2 × l'entrée.
+  const w1h = Math.min(u.cacheWrite1h || 0, u.cacheWrite || 0);
   return ((u.input || 0) * p.input + (u.output || 0) * p.output
-    + (u.cacheRead || 0) * p.cacheRead + (u.cacheWrite || 0) * p.cacheWrite) / 1e6;
+    + (u.cacheRead || 0) * p.cacheRead + ((u.cacheWrite || 0) - w1h) * p.cacheWrite + w1h * p.input * 2) / 1e6;
 }

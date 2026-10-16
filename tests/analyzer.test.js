@@ -71,7 +71,7 @@ test('danger et contrôle', () => {
 test('facture dédoublonnée', () => {
   const b = stats.bill;
   const opus = b.byModel['claude-opus-4-7'];
-  assert.deepEqual({ ...opus, costUsd: 0 }, { input: 8150, output: 1015, cacheRead: 5000, cacheWrite: 1100, turns: 5, costUsd: 0 });
+  assert.deepEqual({ ...opus, costUsd: 0 }, { input: 8150, output: 1015, cacheRead: 5000, cacheWrite: 1100, cacheWrite1h: 0, turns: 5, costUsd: 0 });
   assert.ok(Math.abs(opus.costUsd - 0.0755) <= 0.005, `opus cost ${opus.costUsd}`);           // 0.08 ou 0.07 selon l'arrondi flottant
   assert.ok(Math.abs(b.byModel['claude-fable-5'].costUsd - 0.2265) <= 0.005);
   assert.equal(b.costUsd, 0.34); assert.equal(b.unpricedTokens, 310);
@@ -121,4 +121,53 @@ test('listSessionFiles lit les sous-agents de workflow rangés sous subagents/wo
   const files = await listSessionFiles(root);
   assert.deepEqual(files.map((f) => [f.kind, f.sessionId, path.basename(f.path)]).sort(),
     [['main', 's1', 's1.jsonl'], ['subagent', 's1', 'agent-a.jsonl'], ['subagent', 's1', 'agent-b.jsonl']]);
+});
+
+// Revue finale, Important 1 : sur le corpus réel, un tour écrit sur plusieurs lignes porte un
+// output_tokens croissant (première ligne en cours de flux, stop_reason null). Prendre la première
+// ligne perdait ≈ 46 % des tokens de sortie, donc de la facture affichée sur la carte.
+test('tour multi-lignes : usage final (le plus grand), compté une seule fois', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  const line = (out, stop) => JSON.stringify({ type: 'assistant', requestId: 'r1', timestamp: '2026-10-05T07:00:00Z',
+    message: { id: 'mX', model: 'claude-opus-4-7', role: 'assistant', content: [], stop_reason: stop,
+      usage: { input_tokens: 100, output_tokens: out, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } });
+  a.feedLine(line(1, null));
+  a.feedLine(line(500, 'end_turn'));
+  a.feedLine(line(500, 'end_turn'));
+  a.endFile();
+  const bm = a.result().bill.byModel['claude-opus-4-7'];
+  assert.equal(bm.turns, 1);
+  assert.equal(bm.output, 500);
+  assert.equal(bm.input, 100);
+});
+
+// Revue finale, Important 2 : les écritures de cache en TTL 1 h coûtent 2 × l'entrée, pas 1,25 ×.
+test('écritures de cache 1 h séparées et facturées à 2 × l\'entrée', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  a.feedLine(JSON.stringify({ type: 'assistant', requestId: 'r1', timestamp: '2026-10-05T07:00:00Z',
+    message: { id: 'mY', model: 'claude-opus-4-7', role: 'assistant', content: [],
+      usage: { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 1000,
+        cache_creation: { ephemeral_5m_input_tokens: 600, ephemeral_1h_input_tokens: 400 } } } }));
+  a.endFile();
+  const bm = a.result().bill.byModel['claude-opus-4-7'];
+  assert.equal(bm.cacheWrite, 1000);
+  assert.equal(bm.cacheWrite1h, 400);
+  assert.ok(Math.abs(bm.costUsd - 0.01) < 1e-9, String(bm.costUsd)); // 600 × 6,25 + 400 × 10 = 7 750 µ$ → arrondi 0,01
+});
+
+// Revue finale, Important 3 : les commandes « ! » du mode bash ne sont pas des messages à Claude.
+test('mode bash (! commande) : ni message humain ni texte compté', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  const u = (content, ts) => JSON.stringify({ type: 'user', timestamp: ts, message: { role: 'user', content } });
+  a.feedLine(u('fais le point', '2026-10-05T07:00:00Z'));
+  a.feedLine(u('<bash-input>git status</bash-input>', '2026-10-05T07:01:00Z'));
+  a.feedLine(u('<bash-stdout>FATAL ERROR WHAT THE FUCK</bash-stdout><bash-stderr></bash-stderr>', '2026-10-05T07:01:01Z'));
+  a.endFile();
+  const r = a.result();
+  assert.equal(r.volume.humanMessages, 1);
+  assert.equal(r.couple.humanSwear, 0);
+  assert.equal(r.couple.humanCaps, 0);
 });

@@ -15,6 +15,11 @@ export const CLEAN_TAGS = [
   /<command-name>[\s\S]*?<\/command-name>/g,
   /<command-message>[\s\S]*?<\/command-message>/g,
   /<command-args>[\s\S]*?<\/command-args>/g,
+  // mode bash (« ! commande ») : la commande et sa sortie s'adressent au shell, pas à Claude
+  /<bash-input>[\s\S]*?<\/bash-input>/g,
+  /<bash-stdout>[\s\S]*?<\/bash-stdout>/g,
+  /<bash-stderr>[\s\S]*?<\/bash-stderr>/g,
+  /<local-command-stderr>[\s\S]*?<\/local-command-stderr>/g,
   /`{3}[\s\S]*?`{3}/g,   // blocs de code (écrit `{3} pour ne pas casser la fence Markdown du plan)
 ];
 

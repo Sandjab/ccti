@@ -70,7 +70,7 @@ export class Analyzer {
     this.f = {
       kind, project, sessionId, humanMessages: 0, firstTs: NaN, lastTs: NaN, lastAssistantTs: NaN,
       lastHumanNegative: false, permissionMode: 'default', planned: false, firstHumanLen: -1,
-      seenMsgIds: new Set(), askIds: new Set(), cwdSeen: false,
+      seenMsgIds: new Map(), askIds: new Set(), cwdSeen: false,
     };
   }
 
@@ -170,15 +170,28 @@ export class Analyzer {
     if (!Number.isNaN(ts)) f.lastAssistantTs = ts;
     const model = typeof m.model === 'string' && m.model ? m.model : 'unknown';
     const key = typeof m.id === 'string' ? `${m.id}:${o.requestId || ''}` : null;
-    if (!key || !f.seenMsgIds.has(key)) {
-      if (key) f.seenMsgIds.add(key);
+    // Un tour peut s'étaler sur plusieurs lignes (même message.id + requestId) ; l'usage y croît
+    // pendant le flux (output_tokens surtout). On compte le tour une fois et on garde, champ par
+    // champ, la plus grande valeur vue : le total final du tour.
+    const u = m.usage && typeof m.usage === 'object' ? m.usage : {};
+    const cc = u.cache_creation && typeof u.cache_creation === 'object' ? u.cache_creation : {};
+    const usage = {
+      input: u.input_tokens || 0, output: u.output_tokens || 0,
+      cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0,
+      cacheWrite1h: cc.ephemeral_1h_input_tokens || 0,
+    };
+    let seen = key ? f.seenMsgIds.get(key) : null;
+    let bm;
+    if (!seen) {
       if (f.kind === 'main') s.assistantTurns++; else s.subagentTurns++;
-      let bm = s.byModel.get(model);
-      if (!bm) { bm = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, turns: 0 }; s.byModel.set(model, bm); }
+      bm = s.byModel.get(model);
+      if (!bm) { bm = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0, turns: 0 }; s.byModel.set(model, bm); }
       bm.turns++;
-      const u = m.usage && typeof m.usage === 'object' ? m.usage : {};
-      bm.input += u.input_tokens || 0; bm.output += u.output_tokens || 0;
-      bm.cacheRead += u.cache_read_input_tokens || 0; bm.cacheWrite += u.cache_creation_input_tokens || 0;
+      seen = { bm, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0 };
+      if (key) f.seenMsgIds.set(key, seen);
+    }
+    for (const k of ['input', 'output', 'cacheRead', 'cacheWrite', 'cacheWrite1h']) {
+      if (usage[k] > seen[k]) { seen.bm[k] += usage[k] - seen[k]; seen[k] = usage[k]; }
     }
     if (!Array.isArray(m.content)) return;
     for (const b of m.content) {
@@ -237,7 +250,7 @@ export class Analyzer {
     let costTotal = 0, unpriced = 0;
     for (const [name, u] of s.byModel) {
       const c = costUsd(u, name);
-      if (c === null) unpriced += u.input + u.output + u.cacheRead + u.cacheWrite; else costTotal += c;
+      if (c === null) unpriced += u.input + u.output + u.cacheRead + u.cacheWrite; else costTotal += c; // cacheWrite inclut cacheWrite1h
       byModel[name] = { ...u, costUsd: c === null ? 0 : round2(c) };
     }
     const turnsTotal = [...s.byModel.values()].reduce((a, u) => a + u.turns, 0) || 1;

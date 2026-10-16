@@ -135,9 +135,12 @@ ignorés. Une ligne non parsable est ignorée et comptée dans `corruptLines`.
 
 **Dédoublonnage des tokens (obligatoire).** Un même tour assistant est écrit sur
 plusieurs lignes (une par bloc de contenu) portant le même `message.id` et le même
-`usage`. Vérifié sur l'échantillon : 9 944 lignes pour 4 711 `message.id`, usage
-toujours identique. L'usage n'est compté **qu'une fois par `message.id`**
-(clé `message.id + ':' + requestId` si `requestId` existe). Les blocs `tool_use`
+`usage`. Correction du 17 oct. 2026 (revue finale, mesure sur le corpus complet) :
+l'usage n'est **pas** toujours identique. Pendant le flux, `output_tokens` croît
+d'une ligne à l'autre (première ligne souvent à `stop_reason: null`), et la
+dernière porte le total. Le tour n'est compté **qu'une fois par `message.id`**
+(clé `message.id + ':' + requestId` si `requestId` existe), avec, champ par champ,
+la plus grande valeur d'usage vue pour cette clé. Les blocs `tool_use`
 et `text` sont comptés sur chaque ligne (ce sont des blocs distincts). Un tour
 assistant = un `message.id` distinct.
 
@@ -153,7 +156,10 @@ supprimer les segments `<system-reminder>…</system-reminder>`,
 `<pasted_content…>…</pasted_content>`, `<task-notification>…</task-notification>`,
 `<local-command-stdout>…</local-command-stdout>`, `<local-command-caveat>…</local-command-caveat>`,
 `<command-name>…</command-name>`, `<command-message>…</command-message>`,
-`<command-args>…</command-args>`, les blocs de code ``` … ```, puis trim.
+`<command-args>…</command-args>`, `<bash-input>…</bash-input>`,
+`<bash-stdout>…</bash-stdout>`, `<bash-stderr>…</bash-stderr>`,
+`<local-command-stderr>…</local-command-stderr>` (mode bash « ! », adressé au
+shell et non à Claude), les blocs de code ``` … ```, puis trim.
 Un texte dont le reste commence par `[Request interrupted by user` n'est pas un
 message humain : il est compté comme **interruption**.
 Les messages contenant une commande slash (`<command-name>`) sont comptés dans
@@ -299,7 +305,9 @@ Compte 1 par bloc `tool_use`. Sessions principales **et** sous-agents.
 ### 4.6 La facture
 
 Tokens par modèle (après dédoublonnage) : `input`, `output`, `cacheRead`,
-`cacheWrite` (`cache_creation_input_tokens`). Sessions principales et sous-agents.
+`cacheWrite` (`cache_creation_input_tokens`), dont `cacheWrite1h`
+(`cache_creation.ephemeral_1h_input_tokens`, facturé 2 × l'entrée ; le reste au
+tarif 5 min). Sessions principales et sous-agents.
 
 Grille USD par million de tokens (source : skill claude-api, table en cache du
 2026-10-06, et grille publique pour les anciens modèles). Cache lu = 0,1 × entrée
@@ -544,7 +552,7 @@ couple: { claudeAgreed, absolutelyRight, claudeApologized, humanNo, humanCaps,
           modelRefusalFallbacks }
 danger: { rmRf, forcePush, resetHard, sudo, gitCommits }
 control: { permissionModes{}, plannedSessions, slashCommands{} }
-bill: { byModel{ name: {input,output,cacheRead,cacheWrite,costUsd} }, costUsd,
+bill: { byModel{ name: {input,output,cacheRead,cacheWrite,cacheWrite1h,turns,costUsd} }, costUsd,
         unpricedTokens }
 models: [{name, turns, share}], versions: {first, last, count}
 ```
