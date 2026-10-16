@@ -1,0 +1,83 @@
+/* Freudiff — le cabinet. Tokens sur :root, sombre via media query et data-theme. */
+:root {
+  --bg: #E6E9E2; --surface: #F8F7F2; --ink: #17211C; --muted: #5C6760; --rule: #C3CAC0;
+  --accent: #1F4B3A; --brass: #B8912E; --bar: #1F4B3A; --danger: #8E3324; --on-accent: #F8F7F2;
+  --display: 'American Typewriter', 'Courier Prime', 'Courier New', monospace;
+  --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1A15; --surface: #17241E; --ink: #EAE6DA; --muted: #9AA79E; --rule: #2E4036;
+    --accent: #D8B256; --brass: #D8B256; --bar: #4F8A6E; --danger: #E08A7A; --on-accent: #0F1A15;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1A15; --surface: #17241E; --ink: #EAE6DA; --muted: #9AA79E; --rule: #2E4036;
+  --accent: #D8B256; --brass: #D8B256; --bar: #4F8A6E; --danger: #E08A7A; --on-accent: #0F1A15;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { font-family: var(--body); font-size: 17px; line-height: 1.5; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+.masthead, main, footer { max-width: 1200px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+.masthead { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 1.4rem; color: var(--ink); text-decoration: none; }
+.controls { display: flex; gap: 8px; }
+main { padding-bottom: 48px; }
+#intro, #progress { max-width: 720px; }
+h1 { font-family: var(--display); font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.15; margin: 1.2rem 0 0.6rem; color: var(--accent); }
+h2, h3 { font-family: var(--display); line-height: 1.2; }
+h3 { font-size: 1rem; margin: 18px 0 6px; color: var(--muted); font-weight: 600; }
+.pitch { font-size: 1.1rem; max-width: 62ch; margin: 0 0 1rem; }
+.drop { border: 2px dashed var(--rule); background: var(--surface); border-radius: 8px; padding: 40px 24px; text-align: center; margin: 20px 0 8px; transition: border-color .15s, background .15s; }
+.drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+.drop-hint { font-family: var(--display); font-size: 1.15rem; margin: 0 0 14px; }
+.drop-or { margin: 0; color: var(--muted); }
+button { font: inherit; cursor: pointer; border: 1.5px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 8px 14px; }
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+button.link { border: none; background: none; text-decoration: underline; padding: 0; color: var(--accent); }
+.error { color: var(--danger); font-weight: 600; }
+.promises { list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 6px; }
+.promises li::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--brass); margin-right: 10px; vertical-align: middle; }
+.where summary { cursor: pointer; font-weight: 600; }
+.where ul { padding-left: 1.2rem; }
+.banner { background: var(--surface); border-left: 4px solid var(--brass); padding: 8px 12px; margin: 0 0 12px; }
+progress { width: 100%; height: 12px; accent-color: var(--accent); }
+.card { background: var(--surface); border: 1.5px solid var(--rule); border-radius: 8px; padding: 8px; }
+.card svg { width: 100%; height: auto; display: block; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 28px; }
+.toast { color: var(--muted); font-size: 0.95rem; }
+.diagnosis { background: var(--surface); border-left: 4px solid var(--accent); padding: 16px 20px; max-width: 72ch; margin: 0 0 28px; }
+.diagnosis h2 { margin: 0 0 6px; font-size: 1.4rem; }
+.diagnosis .type-name { font-family: var(--display); font-weight: 700; margin: 0 0 6px; }
+.diagnosis .type-text { font-size: 1.08rem; margin: 0 0 10px; }
+.diagnosis ul { padding-left: 1.2rem; margin: 0; }
+.diagnosis li { margin: 4px 0; }
+#sections { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.section { background: var(--surface); border: 1.5px solid var(--rule); border-radius: 8px; padding: 16px 20px; min-width: 0; }
+.section h2 { font-size: 1.25rem; margin: 0 0 12px; }
+dl { display: grid; grid-template-columns: minmax(50%, 1fr) auto; gap: 4px 16px; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; text-align: right; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.hist { display: flex; align-items: flex-end; gap: 2px; height: 110px; margin: 6px 0 2px; }
+.hist .bar { flex: 1; background: var(--bar); border-radius: 3px 3px 0 0; min-height: 2px; }
+.hist .bar:hover { filter: brightness(1.25); }
+.hist-labels { display: flex; gap: 2px; font-size: 0.72rem; color: var(--muted); }
+.hist-labels span { flex: 1; text-align: center; overflow: visible; white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; }
+td { font-family: var(--display); font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; }
+.bill-total { font-family: var(--display); font-weight: 700; font-size: 1.1rem; margin: 0 0 8px; }
+.disclaimer { color: var(--muted); font-size: 0.9rem; }
+footer { padding-top: 20px; padding-bottom: 40px; color: var(--muted); font-size: 0.95rem; border-top: 1px solid var(--rule); margin-top: 24px; }
+footer a { color: var(--accent); }
+.links { display: flex; gap: 20px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 600px) { .drop { padding: 28px 14px; } h1 { font-size: 1.6rem; } }

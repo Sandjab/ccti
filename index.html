@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Freudiff</title>
+<meta name="description" content="Put your Claude Code relationship on the couch. Local, private, nothing uploaded.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231F4B3A'/%3E%3Crect x='5' y='17' width='22' height='8' rx='2' fill='%23D8B256'/%3E%3Crect x='5' y='10' width='9' height='7' rx='2' fill='%23D8B256'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+<header class="masthead">
+  <a class="brand" href="./">Freudiff</a>
+  <nav class="controls">
+    <button id="lang" type="button" data-i18n="ui.langToggle">EN</button>
+    <button id="theme" type="button" aria-label="Theme">◐</button>
+  </nav>
+</header>
+<main>
+  <section id="intro" class="state">
+    <h1 data-i18n="ui.tagline"></h1>
+    <p class="pitch" data-i18n="ui.pitch"></p>
+    <div id="drop" class="drop" tabindex="0" role="button">
+      <p class="drop-hint" data-i18n="ui.dropHint"></p>
+      <p class="drop-or"><span data-i18n="ui.or"></span> <button id="pick" type="button" class="primary" data-i18n="ui.pick"></button></p>
+      <input id="fallback" type="file" webkitdirectory multiple hidden>
+    </div>
+    <p id="error" class="error" hidden></p>
+    <ul class="promises">
+      <li data-i18n="ui.promise1"></li>
+      <li data-i18n="ui.promise2"></li>
+      <li data-i18n="ui.promise3"></li>
+    </ul>
+    <details class="where">
+      <summary data-i18n="ui.whereTitle"></summary>
+      <ul>
+        <li data-i18n="ui.whereMac"></li>
+        <li data-i18n="ui.whereWin"></li>
+        <li data-i18n="ui.whereLinux"></li>
+      </ul>
+    </details>
+    <p><button id="demo" type="button" class="link" data-i18n="ui.demo"></button></p>
+  </section>
+
+  <section id="progress" class="state" hidden>
+    <h2 data-i18n="ui.analyzing"></h2>
+    <progress id="bar" max="100" value="0"></progress>
+    <p id="progress-text"></p>
+    <button id="cancel" type="button" data-i18n="ui.cancel"></button>
+  </section>
+
+  <section id="report" class="state" hidden>
+    <p id="demo-banner" class="banner" hidden data-i18n="ui.demoBanner"></p>
+    <p id="lowconf" class="banner" hidden></p>
+    <div id="card" class="card"></div>
+    <div class="actions">
+      <button id="png" type="button" class="primary" data-i18n="ui.png"></button>
+      <button id="copy" type="button" data-i18n="ui.copy"></button>
+      <button id="share" type="button" data-i18n="ui.share"></button>
+      <button id="json" type="button" data-i18n="ui.json"></button>
+      <span id="toast" class="toast" aria-live="polite"></span>
+    </div>
+    <section id="diagnosis" class="diagnosis"></section>
+    <div id="sections"></div>
+    <p><button id="again" type="button" class="link" data-i18n="ui.again"></button></p>
+  </section>
+</main>
+<footer>
+  <p id="footer-text"></p>
+  <p class="links"><a href="https://sandjab.github.io/freudiff/freudiff.html" data-i18n="ui.offline"></a><a href="https://github.com/Sandjab/freudiff" data-i18n="ui.source"></a></p>
+</footer>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
