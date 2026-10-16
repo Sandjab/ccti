@@ -171,3 +171,32 @@ test('mode bash (! commande) : ni message humain ni texte compté', () => {
   assert.equal(r.couple.humanSwear, 0);
   assert.equal(r.couple.humanCaps, 0);
 });
+
+// Finition : des horodatages désordonnés (reprise de session, lignes réinsérées) donnaient une
+// « plus longue session » de durée négative sur la page.
+test('durée de session = max − min des horodatages, jamais négative', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  const u = (ts) => JSON.stringify({ type: 'user', timestamp: ts, message: { role: 'user', content: 'go' } });
+  a.feedLine(u('2026-10-05T10:00:00Z'));
+  a.feedLine(u('2026-10-05T11:00:00Z'));
+  a.feedLine(u('2026-10-05T09:00:00Z'));
+  a.endFile();
+  assert.equal(a.result().volume.longestSession.durationMin, 120);
+});
+
+// Finition : les messages « <synthetic> » sont écrits par Claude Code (erreurs d'API, coupures),
+// pas par un modèle ; ils apparaissaient comme un modèle dans « Les modèles ».
+test('tours <synthetic> ignorés : ni tour, ni modèle, ni facture', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  a.feedLine(JSON.stringify({ type: 'assistant', requestId: 'r', timestamp: '2026-10-05T10:00:00Z',
+    message: { id: 'syn1', model: '<synthetic>', role: 'assistant', content: [{ type: 'text', text: 'API Error: sorry' }],
+      usage: { input_tokens: 0, output_tokens: 0 } } }));
+  a.endFile();
+  const r = a.result();
+  assert.equal(r.volume.assistantTurns, 0);
+  assert.deepEqual(r.models, []);
+  assert.deepEqual(r.bill.byModel, {});
+  assert.equal(r.couple.claudeApologized, 0);
+});

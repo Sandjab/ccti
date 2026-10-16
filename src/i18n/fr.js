@@ -17,6 +17,7 @@ export default {
     demo: 'Voir un exemple sans mes fichiers',
     demoBanner: 'Exemple avec des données fictives.',
     analyzing: 'Analyse en cours',
+    scanning: 'Parcours du dossier… {n} fichiers de session trouvés',
     progress: '{done} fichiers sur {total}, {mb} Mo lus, {sessions} sessions, {sec} s',
     cancel: 'Annuler',
     noFiles: "Aucune session trouvée. Le dossier attendu est ~/.claude/projects : un sous-dossier par projet, avec des fichiers .jsonl.",

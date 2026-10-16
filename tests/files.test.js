@@ -33,3 +33,9 @@ test('sous-agents de workflow rangés sous subagents/workflows/ (spec § 3.1 : t
   const out = classify([F('projects/-Users-x-Dev-a/s1.jsonl'), F('projects/-Users-x-Dev-a/s1/subagents/workflows/wf_1-2/agent-b.jsonl')]);
   assert.deepEqual(out.map((o) => [o.slug, o.kind, o.sessionId]), [['-Users-x-Dev-a', 'main', 's1'], ['-Users-x-Dev-a', 'subagent', 's1']]);
 });
+
+// Finition : en déposant ~/.claude, history.jsonl devenait une session (slug « .claude ») vide.
+test('dossier .claude/ : seuls les fichiers sous projects/ comptent', () => {
+  const out = classify([F('.claude/history.jsonl'), F('.claude/projects/-Users-x-Dev-a/s1.jsonl'), F('.claude/projects/-Users-x-Dev-a/s1/subagents/agent-1.jsonl')]);
+  assert.deepEqual(out.map((o) => [o.slug, o.kind]), [['-Users-x-Dev-a', 'main'], ['-Users-x-Dev-a', 'subagent']]);
+});

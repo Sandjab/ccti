@@ -109,8 +109,9 @@ export class Analyzer {
   #touch(ts) {
     const f = this.f;
     if (Number.isNaN(ts)) return;
-    if (Number.isNaN(f.firstTs)) f.firstTs = ts;
-    f.lastTs = ts;
+    // min / max : les lignes d'une session reprise ne sont pas toujours dans l'ordre chronologique
+    if (Number.isNaN(f.firstTs) || ts < f.firstTs) f.firstTs = ts;
+    if (Number.isNaN(f.lastTs) || ts > f.lastTs) f.lastTs = ts;
   }
 
   #user(o, ts) {
@@ -166,6 +167,7 @@ export class Analyzer {
   #assistant(o, ts) {
     const s = this.s, f = this.f, m = o.message;
     if (!m || typeof m !== 'object') return;
+    if (m.model === '<synthetic>') return; // écrit par Claude Code (erreur d'API, coupure), pas par un modèle
     this.#touch(ts);
     if (!Number.isNaN(ts)) f.lastAssistantTs = ts;
     const model = typeof m.model === 'string' && m.model ? m.model : 'unknown';

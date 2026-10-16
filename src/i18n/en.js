@@ -17,6 +17,7 @@ export default {
     demo: 'See an example without my files',
     demoBanner: 'Example with made-up data.',
     analyzing: 'Analyzing',
+    scanning: 'Scanning the folder… {n} session files found',
     progress: '{done} of {total} files, {mb} MB read, {sessions} sessions, {sec}s',
     cancel: 'Cancel',
     noFiles: 'No sessions found. The expected folder is ~/.claude/projects: one subfolder per project, containing .jsonl files.',

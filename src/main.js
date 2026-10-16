@@ -43,10 +43,29 @@ function showError(msg) { const e = $('error'); e.textContent = msg || ''; e.hid
 function toast(msg) { $('toast').textContent = msg; setTimeout(() => { if ($('toast').textContent === msg) $('toast').textContent = ''; }, 2500); }
 
 // ---------- collecte des fichiers ----------
+// Le parcours d'un gros dossier (~/.claude entier) prend plusieurs secondes : on affiche l'état
+// « progress » dès le début, avec le nombre de fichiers de session trouvés.
+function beginScan() {
+  state.scanning = true;
+  showError('');
+  $('bar').removeAttribute('value'); // barre indéterminée
+  $('progress-text').textContent = t(state.lang, 'ui.scanning', { n: fmtInt(state.lang, 0) });
+  show('progress');
+}
+function found(out, item) {
+  out.push(item);
+  if (out.length % 25 === 1) $('progress-text').textContent = t(state.lang, 'ui.scanning', { n: fmtInt(state.lang, out.length) });
+}
+function endScan(out) {
+  if (!state.scanning) return; // annulé pendant le parcours
+  state.scanning = false;
+  start(out);
+}
 async function collectFromHandle(dir, prefix, out) {
   for await (const [name, handle] of dir.entries()) {
     const rel = prefix ? `${prefix}/${name}` : name;
-    if (handle.kind === 'file') { if (name.endsWith('.jsonl')) out.push({ file: await handle.getFile(), rel }); }
+    if (!state.scanning) return;
+    if (handle.kind === 'file') { if (name.endsWith('.jsonl')) found(out, { file: await handle.getFile(), rel }); }
     else if (name !== 'node_modules') await collectFromHandle(handle, rel, out);
   }
 }
@@ -55,9 +74,10 @@ function collectFromEntry(entry, prefix, out) {
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isFile) {
       if (!entry.name.endsWith('.jsonl')) return resolve();
-      entry.file((f) => { out.push({ file: f, rel }); resolve(); }, () => resolve());
+      entry.file((f) => { found(out, { file: f, rel }); resolve(); }, () => resolve());
       return;
     }
+    if (entry.name === 'node_modules' || !state.scanning) return resolve();
     const reader = entry.createReader();
     const all = [];
     const next = () => reader.readEntries(async (entries) => {
@@ -75,14 +95,15 @@ async function handleDrop(ev) {
   // Les items sont invalidés dès que le gestionnaire rend la main : tout saisir de façon synchrone.
   const pending = items.map((it) => (it.getAsFileSystemHandle ? { p: it.getAsFileSystemHandle() } : { e: it.webkitGetAsEntry ? it.webkitGetAsEntry() : null }));
   const out = [];
+  beginScan();
   for (const x of pending) {
     if (x.p) {
       const hd = await x.p;
       if (hd && hd.kind === 'directory') await collectFromHandle(hd, hd.name, out);
-      else if (hd && hd.kind === 'file' && hd.name.endsWith('.jsonl')) out.push({ file: await hd.getFile(), rel: hd.name });
+      else if (hd && hd.kind === 'file' && hd.name.endsWith('.jsonl')) found(out, { file: await hd.getFile(), rel: hd.name });
     } else if (x.e) await collectFromEntry(x.e, '', out);
   }
-  start(out);
+  endScan(out);
 }
 const drop = $('drop');
 drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
@@ -96,9 +117,10 @@ $('pick').addEventListener('click', async () => {
     try {
       const hd = await window.showDirectoryPicker({ mode: 'read' });
       const out = [];
+      beginScan();
       await collectFromHandle(hd, hd.name, out);
-      start(out);
-    } catch (err) { if (!err || err.name !== 'AbortError') showError(String((err && err.message) || err)); }
+      endScan(out);
+    } catch (err) { state.scanning = false; if (!err || err.name !== 'AbortError') { show('intro'); showError(String((err && err.message) || err)); } }
   } else $('fallback').click();
 });
 $('fallback').addEventListener('change', () => {
@@ -111,7 +133,7 @@ $('fallback').addEventListener('change', () => {
 function start(entries) {
   showError('');
   const files = classify(entries);
-  if (!files.length) { showError(t(state.lang, 'ui.noFiles')); return; }
+  if (!files.length) { show('intro'); showError(t(state.lang, 'ui.noFiles')); return; }
   state.demo = false; state.startedAt = Date.now();
   $('bar').value = 0; $('progress-text').textContent = '';
   show('progress');
@@ -130,7 +152,7 @@ function start(entries) {
   w.onerror = (err) => { w.terminate(); state.worker = null; show('intro'); showError((err && err.message) || 'Worker error'); };
   w.postMessage({ type: 'start', files });
 }
-$('cancel').addEventListener('click', () => { if (state.worker) { state.worker.terminate(); state.worker = null; } show('intro'); });
+$('cancel').addEventListener('click', () => { state.scanning = false; if (state.worker) { state.worker.terminate(); state.worker = null; } show('intro'); });
 function setResult(stats) { state.stats = stats; state.profile = computeProfile(stats); renderReport(); show('report'); }
 $('demo').addEventListener('click', () => { state.demo = true; setResult(DEMO_STATS); });
 $('again').addEventListener('click', () => { state.stats = null; state.profile = null; state.demo = false; show('intro'); });
