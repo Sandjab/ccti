@@ -229,12 +229,6 @@ $('png-full').addEventListener('click', async () => {
   try { download(`freudiff-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
   catch { download(`freudiff-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
-$('copy').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': svgToPng(currentSvg()) })]);
-    toast(t(state.lang, 'ui.copied'));
-  } catch { toast(t(state.lang, 'ui.clipboardFail')); }
-});
 $('json').addEventListener('click', () => download('freudiff-stats.json', new Blob([JSON.stringify({ stats: state.stats, profile: state.profile }, null, 2)], { type: 'application/json' })));
 $('share').addEventListener('click', async () => {
   const text = t(state.lang, 'ui.shareText', {

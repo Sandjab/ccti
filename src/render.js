@@ -88,6 +88,16 @@ export function renderSections(root, stats, lang) {
     section(t(lang, 'sections.models'),
       dl(stats.models.slice(0, 8).map((mo) => [mo.name, `${fmtInt(lang, mo.turns)} (${fmtPct(lang, mo.share)})`])),
       h('p', { text: `${L('versions')}${S}${t(lang, 'labels.versionsValue', { first: stats.versions.first || '–', last: stats.versions.last || '–', count: stats.versions.count })}` })),
+    // gaspillage (spec § 4.7) : case libérée par la facture ; absent des anciens exports JSON
+    ...(stats.waste ? [section(t(lang, 'sections.waste'), dl([
+      [L('turnsOver150k'), `${fmtInt(lang, stats.waste.turnsOver150k)} (${fmtPct(lang, stats.waste.turnsOver150kShare)})`],
+      [L('costOver150k'), `${fmtUsd(lang, stats.waste.costOver150kUsd)} (${fmtPct(lang, stats.waste.costOver150kShare)})`],
+      [L('maxContext'), `${fmtInt(lang, stats.waste.maxContext)} ${L('tokens')}`],
+      [L('compactions'), fmtInt(lang, stats.waste.compactions)],
+      [L('cacheRebuilds'), fmtInt(lang, stats.waste.cacheRebuilds)],
+      [L('cacheRebuildsShort'), fmtInt(lang, stats.waste.cacheRebuildsShortPause)],
+      [L('cacheRebuildExcess'), fmtUsd(lang, stats.waste.cacheRebuildExcessUsd)],
+    ]), h('p', { class: 'disclaimer', text: L('wasteNote') }))] : []),
     wide(section(t(lang, 'sections.bill'),
       h('p', { class: 'bill-total', text: `${L('billTotal')}${S}${fmtUsd(lang, b.costUsd)}` }),
       h('div', { class: 'table-wrap' }, h('table', {},

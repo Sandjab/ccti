@@ -30,3 +30,23 @@ test('télécharger le bilan complet en PNG', async ({ page }) => {
   expect(width).toBeGreaterThanOrEqual(Math.floor(reportW * 2)); // rendu ×2, marges comprises
   expect(height).toBeGreaterThan(width); // tout le bilan, pas seulement la carte
 });
+
+test('boutons : plus de copie d\'image, texte pour LinkedIn', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#demo');
+  await expect(page.locator('#copy')).toHaveCount(0);
+  await expect(page.locator('#share')).toHaveText('Copier le texte pour LinkedIn');
+});
+
+// Le bloc Gaspillage prend la case libérée par la facture, juste avant elle.
+test('bloc Gaspillage avant la facture, dans la grille', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#demo');
+  const sections = page.locator('#sections > .section');
+  const n = await sections.count();
+  const waste = sections.nth(n - 2);
+  await expect(waste.locator('h2')).toHaveText('Gaspillage');
+  await expect(waste).not.toHaveClass(/wide/);
+  await expect(waste).toContainText('150 000 tokens');
+  await expect(waste).toContainText('pause');
+});

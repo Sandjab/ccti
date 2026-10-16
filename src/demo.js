@@ -31,6 +31,10 @@ export default {
     },
     costUsd: 1655.08, unpricedTokens: 0,
   },
+  waste: {
+    turnsOver150k: 2480, turnsOver150kShare: 0.2, costOver150kUsd: 870.4, costOver150kShare: 0.526,
+    maxContext: 412000, compactions: 6, cacheRebuilds: 140, cacheRebuildsShortPause: 61, cacheRebuildExcessUsd: 96.3,
+  },
   models: [
     { name: 'claude-opus-4-7', turns: 6900, share: 0.556 }, { name: 'claude-opus-4-8', turns: 2100, share: 0.169 },
     { name: 'claude-sonnet-4-6', turns: 1500, share: 0.121 }, { name: 'claude-fable-5', turns: 1400, share: 0.113 }, { name: 'claude-haiku-4-5', turns: 500, share: 0.04 },

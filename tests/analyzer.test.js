@@ -200,3 +200,33 @@ test('tours <synthetic> ignorés : ni tour, ni modèle, ni facture', () => {
   assert.deepEqual(r.bill.byModel, {});
   assert.equal(r.couple.claudeApologized, 0);
 });
+
+// Gaspillage (mesure du 17 oct. 2026 sur un corpus réel : 55 % de la facture vient des tours à
+// plus de 150 k tokens de contexte ; 6,7 % est du surcoût de cache reconstruit après une pause).
+test('gaspillage : gros contextes, compactions, cache reconstruit après une pause', () => {
+  const a = new Analyzer();
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  const turn = (id, ts, usage) => JSON.stringify({ type: 'assistant', requestId: `r-${id}`, timestamp: ts,
+    message: { id, model: 'claude-opus-4-7', role: 'assistant', content: [], usage } });
+  // A : 160 k de contexte (10 k entrée + 150 k cache lu), sortie en flux 100 → 500.
+  a.feedLine(turn('A', '2026-10-05T10:00:00Z', { input_tokens: 10000, output_tokens: 100, cache_read_input_tokens: 150000, cache_creation_input_tokens: 0 }));
+  a.feedLine(turn('A', '2026-10-05T10:00:05Z', { input_tokens: 10000, output_tokens: 500, cache_read_input_tokens: 150000, cache_creation_input_tokens: 0 }));
+  // B : 10 min plus tard, le cache 5 min a expiré : 50 k réécrits, rien de relu.
+  a.feedLine(turn('B', '2026-10-05T10:10:00Z', { input_tokens: 1000, output_tokens: 10, cache_read_input_tokens: 0, cache_creation_input_tokens: 50000 }));
+  a.feedLine(JSON.stringify({ type: 'system', subtype: 'compact_boundary', timestamp: '2026-10-05T10:20:00Z' }));
+  // C : 80 min plus tard, 20 k réécrits (pause longue).
+  a.feedLine(turn('C', '2026-10-05T11:30:00Z', { input_tokens: 1000, output_tokens: 10, cache_read_input_tokens: 1000, cache_creation_input_tokens: 20000 }));
+  // D : 1 min plus tard, petite écriture : pas une reconstruction.
+  a.feedLine(turn('D', '2026-10-05T11:31:00Z', { input_tokens: 1000, output_tokens: 10, cache_read_input_tokens: 21000, cache_creation_input_tokens: 2000 }));
+  a.endFile();
+  const w = a.result().waste;
+  assert.equal(w.turnsOver150k, 1);
+  assert.equal(w.turnsOver150kShare, 0.25);
+  assert.equal(w.costOver150kUsd, 0.14);       // 10 000 × 5 + 150 000 × 0,5 + 500 × 25 = 137 500 µ$
+  assert.equal(w.maxContext, 160000);
+  assert.equal(w.compactions, 1);
+  assert.equal(w.cacheRebuilds, 2);
+  assert.equal(w.cacheRebuildsShortPause, 1);
+  assert.equal(w.cacheRebuildExcessUsd, 0.4);  // (50 000 + 20 000) × (6,25 − 0,5) = 402 500 µ$
+  assert.ok(w.costOver150kShare > 0 && w.costOver150kShare < 1);
+});

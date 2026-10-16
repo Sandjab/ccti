@@ -338,6 +338,21 @@ abonnement ne facture pas ainsi. »
 - `models` : `{name, turns, share}` triés par tours.
 - `versions` : `{first, last, count}` des `version` distinctes (tri sémantique).
 
+### 4.7 Le gaspillage (ajouté le 17 oct. 2026)
+
+Mesuré sur un corpus réel : 55 % de la facture venait des tours à plus de
+150 000 tokens de contexte, 6,7 % du surcoût de cache reconstruit après une pause.
+Par tour (usage final, sessions principales et sous-agents) :
+- **contexte** = `input + cacheRead + cacheWrite` ; `turnsOver150k` (et part des
+  tours), `costOver150kUsd` (et part de la facture), `maxContext` ;
+- `compactions` = lignes `system` de sous-type `compact_boundary` ;
+- **cache reconstruit** : pause de plus de 300 s depuis le tour précédent du même
+  fichier, `cacheWrite ≥ 10 000` et `cacheRead < cacheWrite` ; `cacheRebuilds`,
+  dont `cacheRebuildsShortPause` (pause ≤ 15 min), et `cacheRebuildExcessUsd` =
+  écriture payée au lieu d'une lecture (5 min : `cacheWrite − cacheRead` ;
+  1 h : `2 × input − cacheRead`).
+Affichage : section « Gaspillage », dans la grille, juste avant la facture.
+
 ## 5. Axes et types
 
 Quatre axes, score 0–100, lettre selon le seuil.
@@ -554,6 +569,8 @@ danger: { rmRf, forcePush, resetHard, sudo, gitCommits }
 control: { permissionModes{}, plannedSessions, slashCommands{} }
 bill: { byModel{ name: {input,output,cacheRead,cacheWrite,cacheWrite1h,turns,costUsd} }, costUsd,
         unpricedTokens }
+waste: { turnsOver150k, turnsOver150kShare, costOver150kUsd, costOver150kShare,
+        maxContext, compactions, cacheRebuilds, cacheRebuildsShortPause, cacheRebuildExcessUsd }
 models: [{name, turns, share}], versions: {first, last, count}
 ```
 

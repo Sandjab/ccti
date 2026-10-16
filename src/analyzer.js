@@ -6,7 +6,7 @@ import {
   HUMAN_NO, HUMAN_SWEAR, HUMAN_THANKS, HUMAN_DOUBLE_MARKS,
   TOOL_DENIED, AUTO_MODE_BLOCK, DANGER, matchesAny, isCaps,
 } from './patterns.js';
-import { costUsd } from './pricing.js';
+import { costUsd, priceFor } from './pricing.js';
 
 export const FREUDIFF_VERSION = '0.1.0';
 const NEEDLES = ['"type":"user"', '"type":"assistant"', '"type":"permission-mode"', '"type":"system"'];
@@ -62,13 +62,16 @@ export class Analyzer {
       rmRf: 0, forcePush: 0, resetHard: 0, sudo: 0, gitCommits: 0,
       permissionModes: new Map(), plannedSessions: 0, slashCommands: new Map(),
       byModel: new Map(), versions: new Set(),
+      // gaspillage (spec § 4.7)
+      turnsOver150k: 0, costOver150k: 0, maxContext: 0, compactions: 0,
+      cacheRebuilds: 0, cacheRebuildsShortPause: 0, cacheRebuildExcess: 0,
     };
     this.f = null;
   }
 
   beginFile({ project = '', kind = 'main', sessionId = '' } = {}) {
     this.f = {
-      kind, project, sessionId, humanMessages: 0, firstTs: NaN, lastTs: NaN, lastAssistantTs: NaN,
+      kind, project, sessionId, humanMessages: 0, firstTs: NaN, lastTs: NaN, lastAssistantTs: NaN, prevTurnTs: NaN,
       lastHumanNegative: false, permissionMode: 'default', planned: false, firstHumanLen: -1,
       seenMsgIds: new Map(), askIds: new Set(), cwdSeen: false,
     };
@@ -99,6 +102,7 @@ export class Analyzer {
       case 'system':
         if (o.subtype === 'turn_duration' && typeof o.durationMs === 'number') s.claudeWorkMs += o.durationMs;
         else if (o.subtype === 'model_refusal_fallback') s.modelRefusalFallbacks++;
+        else if (o.subtype === 'compact_boundary') s.compactions++;
         return;
       case 'user': this.#user(o, ts); return;
       case 'assistant': this.#assistant(o, ts); return;
@@ -189,12 +193,17 @@ export class Analyzer {
       bm = s.byModel.get(model);
       if (!bm) { bm = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0, turns: 0 }; s.byModel.set(model, bm); }
       bm.turns++;
-      seen = { bm, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0 };
+      // gap : temps écoulé depuis le tour précédent du même fichier (cache 5 min expiré au-delà de 300 s)
+      const gapSec = !Number.isNaN(ts) && !Number.isNaN(f.prevTurnTs) ? (ts - f.prevTurnTs) / 1000 : NaN;
+      if (!Number.isNaN(ts)) f.prevTurnTs = ts;
+      seen = { bm, model, gapSec, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0, cost: 0, big: false, rebuilt: false };
       if (key) f.seenMsgIds.set(key, seen);
     }
+    let grew = false;
     for (const k of ['input', 'output', 'cacheRead', 'cacheWrite', 'cacheWrite1h']) {
-      if (usage[k] > seen[k]) { seen.bm[k] += usage[k] - seen[k]; seen[k] = usage[k]; }
+      if (usage[k] > seen[k]) { seen.bm[k] += usage[k] - seen[k]; seen[k] = usage[k]; grew = true; }
     }
+    if (grew) this.#waste(seen);
     if (!Array.isArray(m.content)) return;
     for (const b of m.content) {
       if (!b || typeof b !== 'object') continue;
@@ -212,6 +221,29 @@ export class Analyzer {
         else if (name === 'Bash' && b.input && typeof b.input.command === 'string') {
           for (const k of Object.keys(DANGER)) if (DANGER[k].test(b.input.command)) s[k]++;
         }
+      }
+    }
+  }
+
+  // Gaspillage d'un tour, recalculé à chaque fois que son usage croît (tour en flux).
+  #waste(t) {
+    const s = this.s;
+    const ctx = t.input + t.cacheRead + t.cacheWrite;
+    if (ctx > s.maxContext) s.maxContext = ctx;
+    const p = priceFor(t.model);
+    if (ctx >= 150000) {
+      if (!t.big) { t.big = true; s.turnsOver150k++; }
+      if (p) { const c = costUsd(t, t.model); s.costOver150k += c - t.cost; t.cost = c; }
+    }
+    // Reconstruction : après une pause de plus de 5 min, au moins 10 k tokens réécrits en cache
+    // et moins relus qu'écrits. Surcoût = écriture payée au lieu d'une lecture.
+    if (!t.rebuilt && t.gapSec > 300 && t.cacheWrite >= 10000 && t.cacheRead < t.cacheWrite) {
+      t.rebuilt = true;
+      s.cacheRebuilds++;
+      if (t.gapSec <= 900) s.cacheRebuildsShortPause++;
+      if (p) {
+        const w1h = Math.min(t.cacheWrite1h, t.cacheWrite);
+        s.cacheRebuildExcess += ((t.cacheWrite - w1h) * (p.cacheWrite - p.cacheRead) + w1h * (2 * p.input - p.cacheRead)) / 1e6;
       }
     }
   }
@@ -291,6 +323,15 @@ export class Analyzer {
       danger: { rmRf: s.rmRf, forcePush: s.forcePush, resetHard: s.resetHard, sudo: s.sudo, gitCommits: s.gitCommits },
       control: { permissionModes: Object.fromEntries(s.permissionModes), plannedSessions: s.plannedSessions, slashCommands: Object.fromEntries(top(s.slashCommands, 10)) },
       bill: { byModel, costUsd: round2(costTotal), unpricedTokens: unpriced },
+      waste: {
+        turnsOver150k: s.turnsOver150k,
+        turnsOver150kShare: (s.assistantTurns + s.subagentTurns) ? s.turnsOver150k / (s.assistantTurns + s.subagentTurns) : 0,
+        costOver150kUsd: round2(s.costOver150k),
+        costOver150kShare: costTotal ? s.costOver150k / costTotal : 0,
+        maxContext: s.maxContext, compactions: s.compactions,
+        cacheRebuilds: s.cacheRebuilds, cacheRebuildsShortPause: s.cacheRebuildsShortPause,
+        cacheRebuildExcessUsd: round2(s.cacheRebuildExcess),
+      },
       models,
       versions: { first: versions[0] || null, last: versions[versions.length - 1] || null, count: versions.length },
     };

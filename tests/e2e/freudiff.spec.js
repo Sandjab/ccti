@@ -17,7 +17,7 @@ test('analyse des fixtures, carte, exports, langue, thème', async ({ page }) =>
   await expect(page.locator('#card svg')).toContainText("Le Tireur d'élite");
   await expect(page.locator('#card svg')).toContainText('CLID');
   await expect(page.locator('#diagnosis li')).toHaveCount(5);
-  await expect(page.locator('#sections .section')).toHaveCount(6);
+  await expect(page.locator('#sections .section')).toHaveCount(7); // 6 + Gaspillage
   await expect(page.locator('#lowconf')).toBeHidden();
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#png')]);
   expect(download.suggestedFilename()).toBe('freudiff-CLID.png');
