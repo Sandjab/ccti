@@ -13,22 +13,27 @@ export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const X0 = 200, X1 = 540; // piste des jauges
+const X0 = 200, X1 = 540, XC = (X0 + X1) / 2; // piste des jauges ; le seuil est au centre
 
-function gauge(key, score, threshold, labels, y, c) {
-  const w = X1 - X0;
-  const kx = Math.round(X0 + (w * Math.max(0, Math.min(100, score))) / 100);
-  const tx = Math.round(X0 + (w * threshold) / 100);
-  const ticks = Array.from({ length: 11 }, (_, i) => {
-    const x = X0 + (w * i) / 10;
-    return `<line x1="${x}" y1="${y - 4}" x2="${x}" y2="${y + 4}" stroke="${c.rule}" stroke-width="1"/>`;
-  }).join('');
-  return `<text x="60" y="${y + 5}" font-size="16" fill="${c.muted}">${esc(labels.left)}</text>
+// Échelle par morceaux : [0, seuil] → moitié gauche, [seuil, 100] → moitié droite.
+// Ainsi le point est du côté de la lettre obtenue, quel que soit le seuil de l'axe.
+function gaugeX(score, threshold) {
+  const s = Math.max(0, Math.min(100, score));
+  return Math.round(s < threshold ? X0 + ((XC - X0) * s) / threshold : XC + ((X1 - XC) * (s - threshold)) / (100 - threshold));
+}
+
+function gauge(key, score, threshold, labels, help, y, c) {
+  const kx = gaugeX(score, threshold);
+  const ticks = [X0, X1].map((x) => `<line x1="${x}" y1="${y - 4}" x2="${x}" y2="${y + 4}" stroke="${c.rule}" stroke-width="1"/>`).join('');
+  return `<g><title>${esc(help)}</title>
+<rect x="44" y="${y - 30}" width="632" height="60" fill="transparent"/>
+<text x="60" y="${y + 5}" font-size="16" fill="${c.muted}">${esc(labels.left)}</text>
 <text x="660" y="${y + 5}" font-size="16" fill="${c.muted}" text-anchor="end">${esc(labels.right)}</text>
 <line x1="${X0}" y1="${y}" x2="${X1}" y2="${y}" stroke="${c.rule}" stroke-width="2"/>${ticks}
-<line x1="${tx}" y1="${y - 12}" x2="${tx}" y2="${y + 12}" stroke="${c.muted}" stroke-width="2" stroke-dasharray="3 3"/>
+<line x1="${XC}" y1="${y - 10}" x2="${XC}" y2="${y + 16}" stroke="${c.muted}" stroke-width="2" stroke-dasharray="3 3"/>
+<text class="threshold" x="${XC}" y="${y + 28}" font-size="11" fill="${c.muted}" text-anchor="middle">${threshold}</text>
 <circle cx="${kx}" cy="${y}" r="11" fill="${c.accent}" stroke="${c.card}" stroke-width="3"/>
-<text x="${kx}" y="${y - 18}" font-family="${DISPLAY_FONT}" font-size="13" fill="${c.ink}" text-anchor="middle">${Math.round(score)}</text>`;
+<text x="${kx}" y="${y - 18}" font-family="${DISPLAY_FONT}" font-size="13" fill="${c.ink}" text-anchor="middle">${Math.round(score)}</text></g>`;
 }
 
 export function renderCard(stats, profile, { lang = 'en', theme = 'light' } = {}) {
@@ -37,7 +42,11 @@ export function renderCard(stats, profile, { lang = 'en', theme = 'light' } = {}
   const v = stats.volume || {}, couple = stats.couple || {}, bill = stats.bill || {};
   const period = v.firstDay ? `${fmtDay(lang, v.firstDay)} – ${fmtDay(lang, v.lastDay)}` : '';
   const gauges = ['A', 'V', 'P', 'N']
-    .map((k, i) => gauge(k, profile.axes[k], THRESHOLDS[k], t(lang, `axes.${k}`), 330 + i * 60, c)).join('\n');
+    .map((k, i) => {
+      const score = profile.axes[k], threshold = THRESHOLDS[k];
+      const help = t(lang, `axesHelp.${k}`, { t: threshold, chars: threshold * 4, score: Math.round(score) });
+      return gauge(k, score, threshold, t(lang, `axes.${k}`), help, 330 + i * 60, c);
+    }).join('\n');
   const nums = [
     [fmtInt(lang, v.sessions || 0), t(lang, 'card.sessions')],
     [fmtInt(lang, couple.claudeAgreed || 0), t(lang, 'card.agreed')],

@@ -484,6 +484,9 @@ inséré **déjà formaté avec son unité** (« 15 % », « 1 234 $ », « 4 h 
 - Contenu : en-tête « FREUDIFF » + « bilan de couple dev ↔ Claude Code » ; nom du
   type en grand ; code à quatre lettres ; quatre jauges horizontales avec les
   deux pôles étiquetés (ex. « Contrôle ◀ ▶ Autonomie ») et un curseur au score ;
+  le seuil de l'axe est au centre de la piste, sa valeur écrite dessous (échelle
+  par morceaux : le curseur est toujours du côté de la lettre obtenue) ; une
+  info-bulle (`<title>`) par axe explique le calcul, le seuil et le score ;
   trois chiffres : sessions, « Claude vous a donné raison », coût API équivalent ;
   période « 11 mai → 2 oct. 2026 » ; pied « sandjab.github.io/freudiff ».
 - Deux thèmes (clair/sombre) via des variables passées au générateur, pas via

@@ -55,6 +55,12 @@ export default {
     P: { left: 'Impulsive', right: 'Planner' },
     N: { left: 'Diurnal', right: 'Nocturnal' },
   },
+  axesHelp: {
+    A: "Control or Autonomy. 70%: the share of your messages sent in a mode that lets Claude act without asking (auto, acceptEdits, bypassPermissions, dontAsk). 30%: lack of friction, meaning few interruptions and tool denials per message. Autonomy (A) from {t}, otherwise Control (C). Your score: {score}.",
+    V: "Laconic or Verbose. Median length of your messages, excluding pasted text, system reminders and commands: 1 point per 4 characters, capped at 100. Verbose (V) from {t}, i.e. a median of {chars} characters, otherwise Laconic (L). Your score: {score}.",
+    P: "Impulsive or Planner. Share of your sessions that were planned: plan mode used, or a first message of at least 600 characters. Planner (P) from {t}%, otherwise Impulsive (I). Your score: {score}.",
+    N: "Diurnal or Nocturnal. Share of your messages sent between 9 pm and 6 am, local time. Nocturnal (N) from {t}%, otherwise Diurnal (D). Your score: {score}.",
+  },
   sections: { couple: 'The couple', numbers: 'The numbers', moments: 'The moments', danger: 'The danger', bill: 'The bill', models: 'The models', waste: 'Waste' },
   labels: {
     claudeAgreed: 'Claude said you were right', absolutelyRight: 'of which "You\'re absolutely right"', claudeApologized: "Claude's apologies",
