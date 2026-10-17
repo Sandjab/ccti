@@ -2,7 +2,7 @@
 import { detectLang, t, fmtInt } from './i18n.js';
 import { computeProfile } from './profile.js';
 import { renderCard } from './card.js';
-import { renderDiagnosis, renderSections, diagnosisTexts } from './render.js';
+import { renderDiagnosis, renderSections, diagnosisTexts, renderGallery } from './render.js';
 import { classify } from './files.js';
 import { createWorker } from './worker-factory.js';
 import DEMO_STATS from './demo.js';
@@ -23,8 +23,11 @@ function applyI18n() {
   let tz = 'local';
   try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local'; } catch {}
   $('footer-text').textContent = t(state.lang, 'ui.footer', { tz });
+  renderGallery($('types-gallery'), state.lang);
   if (state.stats) renderReport();
 }
+// Fichier hors ligne : les illustrations n'y sont pas, la galerie disparaît au premier échec.
+$('types-gallery').addEventListener('freudiff:missing', () => { $('types').hidden = true; });
 $('lang').addEventListener('click', () => {
   state.lang = state.lang === 'fr' ? 'en' : 'fr';
   try { localStorage.setItem('freudiff.lang', state.lang); } catch {}
@@ -195,7 +198,7 @@ function svgToPng(svg, scale = 2, width = 1200, height = 630) {
 }
 // Bilan complet : le DOM affiché est cloné dans un SVG <foreignObject>, avec la feuille de style
 // et les valeurs calculées des variables du thème, puis rendu en PNG. Aucune ressource externe.
-function reportSvg() {
+async function reportSvg() {
   const src = $('report');
   const pad = 24;
   const inner = Math.ceil(src.getBoundingClientRect().width);
@@ -215,6 +218,13 @@ function reportSvg() {
   const vars = [...new Set(css.match(/--[\w-]+(?=\s*:)/g) || [])].map((n) => `${n}:${root.getPropertyValue(n)}`).join(';');
   const xml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const style = `${vars};background:${body.backgroundColor};color:${body.color};font-family:${body.fontFamily};font-size:${body.fontSize};line-height:${body.lineHeight};width:${width}px;height:${height}px;padding:${pad}px;box-sizing:border-box`;
+  for (const img of clone.querySelectorAll('img')) {
+    if (img.style.display === 'none') { img.remove(); continue; }
+    try {
+      const blob = await (await fetch(img.src)).blob();
+      img.src = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(blob); });
+    } catch { img.remove(); }
+  }
   const html = new XMLSerializer().serializeToString(clone);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject x="0" y="0" width="${width}" height="${height}">`
     + `<div xmlns="http://www.w3.org/1999/xhtml" style="${xml(style).replace(/"/g, '&quot;')}"><style>${xml(css)}</style>${html}</div></foreignObject></svg>`;
@@ -225,7 +235,7 @@ $('png').addEventListener('click', async () => {
   catch { download(`freudiff-${state.profile.code}.svg`, new Blob([currentSvg()], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
 $('png-full').addEventListener('click', async () => {
-  const { svg, width, height } = reportSvg();
+  const { svg, width, height } = await reportSvg();
   try { download(`freudiff-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
   catch { download(`freudiff-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });

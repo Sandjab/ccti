@@ -27,10 +27,20 @@ export function diagnosisTexts(profile, lang) {
   };
 }
 
+// Illustration d'un type (assets/types/<lang>/<CODE>.webp). Absente du fichier hors ligne :
+// en cas d'échec de chargement, l'image est masquée plutôt qu'affichée cassée.
+export function typeImage(code, lang, attrs = {}) {
+  const img = h('img', { alt: `${t(lang, `types.${code}.name`)} (${code})`, width: 800, height: 800, decoding: 'async', ...attrs });
+  img.addEventListener('error', () => { img.style.display = 'none'; img.dispatchEvent(new Event('freudiff:missing', { bubbles: true })); });
+  img.src = `assets/types/${lang}/${code}.webp`;
+  return img;
+}
+
 export function renderDiagnosis(root, profile, lang) {
   const d = diagnosisTexts(profile, lang);
   root.replaceChildren(
     h('h2', { text: t(lang, 'ui.diagnosisTitle') }),
+    typeImage(profile.code, lang, { class: 'type-illustration' }),
     h('p', { class: 'type-name', text: d.name }),
     h('p', { class: 'type-text', text: d.text }),
     h('ul', {}, d.items.map((x) => h('li', { text: x }))),
@@ -50,6 +60,10 @@ function histogram(values, labels, titleOf) {
     }))),
     h('div', { class: 'hist-labels' }, labels.map((l) => h('span', { text: l }))),
   ];
+}
+
+export function renderGallery(root, lang) {
+  root.replaceChildren(...Object.keys(t(lang, 'types')).map((code) => typeImage(code, lang, { loading: 'lazy' })));
 }
 
 export function renderSections(root, stats, lang) {

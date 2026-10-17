@@ -51,7 +51,13 @@ progress { width: 100%; height: 12px; accent-color: var(--accent); }
 .card svg { width: 100%; height: auto; display: block; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 28px; }
 .toast { color: var(--muted); font-size: 0.95rem; }
-.diagnosis { background: var(--surface); border-left: 4px solid var(--accent); padding: 16px 20px; max-width: 72ch; margin: 0 0 28px; }
+.diagnosis { background: var(--surface); border-left: 4px solid var(--accent); padding: 16px 20px; max-width: 90ch; margin: 0 0 28px; display: flow-root; }
+.type-illustration { float: right; width: 240px; height: auto; margin: 0 0 12px 20px; border-radius: 6px; }
+@media (max-width: 600px) { .type-illustration { float: none; display: block; width: 100%; max-width: 360px; margin: 8px 0 12px; } }
+.types { margin-top: 28px; }
+.types h2 { font-size: 1.25rem; margin: 0 0 12px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.gallery img { width: 100%; height: auto; display: block; border-radius: 6px; }
 .diagnosis h2 { margin: 0 0 6px; font-size: 1.4rem; }
 .diagnosis .type-name { font-family: var(--display); font-weight: 700; margin: 0 0 6px; }
 .diagnosis .type-text { font-size: 1.08rem; margin: 0 0 10px; }

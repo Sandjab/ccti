@@ -32,6 +32,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html src _site/
+          mkdir -p _site/assets && cp -r assets/types _site/assets/
           cp dist/freudiff.html _site/freudiff.html
       - uses: actions/upload-pages-artifact@v3
         with:

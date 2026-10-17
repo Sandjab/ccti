@@ -45,6 +45,13 @@ formez avec Claude Code, avec une facture à la fin parce qu'il faut bien que qu
 
 Quatre axes à deux pôles, une lettre par axe. Freudiff n'est pas affilié à The Myers-Briggs Company ; MBTI est leur marque déposée.
 
+<table>
+  <tr><td><img src="assets/types/fr/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/fr/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/fr/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/fr/CVIN.webp" alt="CVIN" width="200"></td></tr>
+  <tr><td><img src="assets/types/fr/CLPD.webp" alt="CLPD" width="200"></td><td><img src="assets/types/fr/CLPN.webp" alt="CLPN" width="200"></td><td><img src="assets/types/fr/CLID.webp" alt="CLID" width="200"></td><td><img src="assets/types/fr/CLIN.webp" alt="CLIN" width="200"></td></tr>
+  <tr><td><img src="assets/types/fr/AVPD.webp" alt="AVPD" width="200"></td><td><img src="assets/types/fr/AVPN.webp" alt="AVPN" width="200"></td><td><img src="assets/types/fr/AVID.webp" alt="AVID" width="200"></td><td><img src="assets/types/fr/AVIN.webp" alt="AVIN" width="200"></td></tr>
+  <tr><td><img src="assets/types/fr/ALPD.webp" alt="ALPD" width="200"></td><td><img src="assets/types/fr/ALPN.webp" alt="ALPN" width="200"></td><td><img src="assets/types/fr/ALID.webp" alt="ALID" width="200"></td><td><img src="assets/types/fr/ALIN.webp" alt="ALIN" width="200"></td></tr>
+</table>
+
 | Code | Français | English |
 |---|---|---|
 | CVPD | Le Contremaître | The Foreman |
