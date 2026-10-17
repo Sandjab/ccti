@@ -11,7 +11,7 @@ const external = (page) => {
 test('analyse des fixtures, carte, exports, langue, thème', async ({ page }) => {
   const urls = external(page);
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('Allongez votre binôme Claude Code sur le divan.');
+  await expect(page.locator('h1')).toHaveText('Votre binôme Claude Code en 4 lettres : un test de personnalité à 16 types.');
   await page.locator('#fallback').setInputFiles('tests/fixtures/projects');
   await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#card svg')).toContainText("Le Tireur d'élite");

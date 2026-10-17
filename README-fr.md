@@ -6,9 +6,9 @@
 [![Licence : MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-sandjab.github.io%2Ffreudiff-1F4B3A)](https://sandjab.github.io/freudiff)
 
-> **Allongez votre binôme Claude Code sur le divan.**
-> Glissez votre dossier `~/.claude/projects` sur une page. Vous obtenez un type de personnalité,
-> les compteurs que personne n'ose tenir, une facture en équivalent API, un diagnostic qui a des
+> **Votre binôme Claude Code en 4 lettres : un test de personnalité à 16 types.**
+> Glissez votre dossier `~/.claude/projects` sur une page. Quatre axes mesurés vous classent dans
+> l'un des seize types, dans l'esprit des tests à la MBTI. Vous obtenez aussi les compteurs que personne n'ose tenir, une facture en équivalent API, un diagnostic qui a des
 > dents, et une carte à partager. Tout tourne dans votre navigateur. Rien n'est envoyé, jamais.
 
 <picture>
@@ -42,6 +42,8 @@ formez avec Claude Code, avec une facture à la fin parce qu'il faut bien que qu
 - **Un diagnostic** avec jusqu'à cinq observations, et une carte 1200×630 (PNG, presse-papiers) à partager.
 
 ## Les seize types
+
+Quatre axes à deux pôles, une lettre par axe. Freudiff n'est pas affilié à The Myers-Briggs Company ; MBTI est leur marque déposée.
 
 | Code | Français | English |
 |---|---|---|
@@ -102,4 +104,4 @@ uniquement, pour l'instant.
 
 ## Licence
 
-MIT. Fait par [@Sandjab](https://github.com/Sandjab), avec Claude de l'autre côté du divan.
+MIT. Fait par [@Sandjab](https://github.com/Sandjab), avec Claude Code.

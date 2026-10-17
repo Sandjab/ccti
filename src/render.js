@@ -18,12 +18,22 @@ export function h(tag, attrs = {}, ...children) {
 const pad2 = (n) => String(n).padStart(2, '0');
 const sep = (lang) => (lang === 'fr' ? ' : ' : ': ');
 
+// Textes du diagnostic, partagés par l'affichage et le bouton « Copier le texte pour LinkedIn ».
+export function diagnosisTexts(profile, lang) {
+  return {
+    name: `${t(lang, `types.${profile.code}.name`)} (${profile.code})`,
+    text: t(lang, `types.${profile.code}.text`),
+    items: profile.observations.map((o) => t(lang, `observations.${o.id}`, { n: fmtN(lang, o.fmt, o.n) })),
+  };
+}
+
 export function renderDiagnosis(root, profile, lang) {
+  const d = diagnosisTexts(profile, lang);
   root.replaceChildren(
     h('h2', { text: t(lang, 'ui.diagnosisTitle') }),
-    h('p', { class: 'type-name', text: `${t(lang, `types.${profile.code}.name`)} (${profile.code})` }),
-    h('p', { class: 'type-text', text: t(lang, `types.${profile.code}.text`) }),
-    h('ul', {}, profile.observations.map((o) => h('li', { text: t(lang, `observations.${o.id}`, { n: fmtN(lang, o.fmt, o.n) }) }))),
+    h('p', { class: 'type-name', text: d.name }),
+    h('p', { class: 'type-text', text: d.text }),
+    h('ul', {}, d.items.map((x) => h('li', { text: x }))),
   );
 }
 

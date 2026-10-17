@@ -2,7 +2,7 @@
 import { detectLang, t, fmtInt } from './i18n.js';
 import { computeProfile } from './profile.js';
 import { renderCard } from './card.js';
-import { renderDiagnosis, renderSections } from './render.js';
+import { renderDiagnosis, renderSections, diagnosisTexts } from './render.js';
 import { classify } from './files.js';
 import { createWorker } from './worker-factory.js';
 import DEMO_STATS from './demo.js';
@@ -231,10 +231,9 @@ $('png-full').addEventListener('click', async () => {
 });
 $('json').addEventListener('click', () => download('freudiff-stats.json', new Blob([JSON.stringify({ stats: state.stats, profile: state.profile }, null, 2)], { type: 'application/json' })));
 $('share').addEventListener('click', async () => {
-  const text = t(state.lang, 'ui.shareText', {
-    type: t(state.lang, `types.${state.profile.code}.name`), code: state.profile.code,
-    sessions: fmtInt(state.lang, state.stats.volume.sessions), agreed: fmtInt(state.lang, state.stats.couple.claudeAgreed),
-  });
+  // Texte pour LinkedIn : le diagnostic affiché, puis le lien.
+  const d = diagnosisTexts(state.profile, state.lang);
+  const text = [t(state.lang, 'ui.shareHeader', { type: d.name }), '', d.text, '', ...d.items.map((x) => `• ${x}`), '', t(state.lang, 'ui.shareFooter')].join('\n');
   try { await navigator.clipboard.writeText(text); toast(t(state.lang, 'ui.copied')); } catch { toast(t(state.lang, 'ui.clipboardFail')); }
 });
 

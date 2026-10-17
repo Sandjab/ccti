@@ -6,8 +6,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-sandjab.github.io%2Ffreudiff-1F4B3A)](https://sandjab.github.io/freudiff)
 
-> **Put your Claude Code relationship on the couch.**
-> Drop your `~/.claude/projects` folder on a page. Get a personality type, the counters nobody
+> **You and Claude Code in four letters: a 16-type personality test.**
+> Drop your `~/.claude/projects` folder on a page. Four measured axes give you one of sixteen
+> types, in the spirit of MBTI-style tests. You also get the counters nobody
 > dares to keep, an API-equivalent bill, a diagnosis with teeth, and a card to share.
 > Everything runs in your browser. Nothing is uploaded, ever.
 
@@ -42,6 +43,8 @@ with a bill at the end because somebody has to say it.
 - **A diagnosis** with up to five observations, and a 1200×630 card (PNG, clipboard) to share.
 
 ## The sixteen types
+
+Four axes, two poles each, one letter per axis. Freudiff is not affiliated with The Myers-Briggs Company; MBTI is their trademark.
 
 | Code | English | Français |
 |---|---|---|
@@ -99,4 +102,4 @@ conversations; other languages will undercount. Claude Code only, for now.
 
 ## License
 
-MIT. Made by [@Sandjab](https://github.com/Sandjab), with Claude on the other side of the couch.
+MIT. Made by [@Sandjab](https://github.com/Sandjab), with Claude Code.

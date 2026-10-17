@@ -50,3 +50,27 @@ test('bloc Gaspillage avant la facture, dans la grille', async ({ page }) => {
   await expect(waste).toContainText('150 000 tokens');
   await expect(waste).toContainText('pause');
 });
+
+// Le bouton LinkedIn copie le diagnostic tel qu'affiché (type, texte, observations) et le lien.
+test('le bouton LinkedIn copie le diagnostic', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  await page.click('#demo');
+  await page.click('#share');
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  await expect(page.locator('#diagnosis .type-name')).toHaveText("L'Architecte noctambule (AVPN)");
+  expect(text).toContain("L'Architecte noctambule (AVPN)");
+  expect(text).toContain(await page.locator('#diagnosis .type-text').textContent());
+  for (const li of await page.locator('#diagnosis li').allTextContents()) expect(text).toContain(`• ${li}`);
+  expect(text).toContain('https://sandjab.github.io/freudiff');
+});
+
+// Positionnement : un test de personnalité à 16 types, plus la métaphore du divan.
+test('accueil : test de personnalité à 16 types, sans divan, en FR et en EN', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('h1')).toContainText('16 types');
+  await expect(page.locator('body')).not.toContainText(/\bdivan\b/i);
+  await page.click('#lang');
+  await expect(page.locator('h1')).toContainText('16-type');
+  await expect(page.locator('body')).not.toContainText(/\bcouch\b/i);
+});

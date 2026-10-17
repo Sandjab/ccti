@@ -2,8 +2,8 @@
 export default {
   ui: {
     title: 'Freudiff',
-    tagline: 'Put your Claude Code relationship on the couch.',
-    pitch: 'Drop your sessions folder. Freudiff turns it into a personality type, a few counters nobody dares to keep, a bill, a diagnosis and a card to share. Everything happens here, in your browser.',
+    tagline: 'You and Claude Code in four letters: a 16-type personality test.',
+    pitch: 'Drop your sessions folder. Freudiff measures four axes (Control or Autonomy, Laconic or Verbose, Impulsive or Planner, Diurnal or Nocturnal), gives you one of sixteen types, and adds a few counters nobody dares to keep, a bill, a diagnosis and a card to share. Everything happens here, in your browser.',
     dropHint: 'Drop your ~/.claude/projects folder here',
     pick: 'Choose the folder',
     or: 'or',
@@ -30,7 +30,8 @@ export default {
     clipboardFail: 'Clipboard unavailable, download the PNG instead.',
     json: 'Export JSON',
     share: 'Copy the LinkedIn text',
-    shareText: 'I put my Claude Code relationship on the couch: I am "{type}" ({code}). {sessions} sessions, Claude told me I was right {agreed} times. Take the test, nothing leaves your machine: https://sandjab.github.io/freudiff',
+    shareHeader: 'My Freudiff diagnosis: {type}',
+    shareFooter: '16-type personality test for Claude Code, computed in the browser, nothing leaves your machine: https://sandjab.github.io/freudiff',
     again: 'Analyze another folder',
     offline: 'Offline version (HTML file)',
     source: 'Source code',
@@ -39,7 +40,7 @@ export default {
     themeToggle: 'Theme',
   },
   card: {
-    subtitle: 'Session sheet, dev and Claude Code',
+    subtitle: 'Personality profile, dev and Claude Code',
     sessions: 'sessions',
     agreed: 'times Claude said you were right',
     cost: 'API equivalent',

@@ -2,8 +2,8 @@
 export default {
   ui: {
     title: 'Freudiff',
-    tagline: 'Allongez votre binôme Claude Code sur le divan.',
-    pitch: "Glissez votre dossier de sessions. Freudiff en tire un type de personnalité, quelques compteurs que personne n'ose tenir, une facture, un diagnostic et une carte à partager. Tout se passe ici, dans votre navigateur.",
+    tagline: 'Votre binôme Claude Code en 4 lettres : un test de personnalité à 16 types.',
+    pitch: "Glissez votre dossier de sessions. Freudiff mesure quatre axes (Contrôle ou Autonomie, Laconique ou Verbeux, Impulsif ou Planificateur, Diurne ou Nocturne), en tire l'un des seize types, et y ajoute quelques compteurs que personne n'ose tenir, une facture, un diagnostic et une carte à partager. Tout se passe ici, dans votre navigateur.",
     dropHint: 'Glissez ici le dossier ~/.claude/projects',
     pick: 'Choisir le dossier',
     or: 'ou',
@@ -30,7 +30,8 @@ export default {
     clipboardFail: 'Presse-papiers indisponible, téléchargez le PNG.',
     json: 'Exporter le JSON',
     share: 'Copier le texte pour LinkedIn',
-    shareText: "Mon binôme Claude Code est passé sur le divan : je suis « {type} » ({code}). {sessions} sessions, Claude m'a donné raison {agreed} fois. Faites le test, rien ne quitte votre machine : https://sandjab.github.io/freudiff",
+    shareHeader: 'Mon diagnostic Freudiff : {type}',
+    shareFooter: 'Test de personnalité à 16 types pour Claude Code, calculé dans le navigateur, rien ne quitte la machine : https://sandjab.github.io/freudiff',
     again: 'Analyser un autre dossier',
     offline: 'Version hors ligne (fichier HTML)',
     source: 'Code source',
@@ -39,7 +40,7 @@ export default {
     themeToggle: 'Thème',
   },
   card: {
-    subtitle: 'Fiche de séance, dev et Claude Code',
+    subtitle: 'Profil de personnalité, dev et Claude Code',
     sessions: 'sessions',
     agreed: 'fois où Claude vous a donné raison',
     cost: "d'équivalent API",
