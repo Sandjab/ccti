@@ -58,6 +58,8 @@ test('le bouton LinkedIn copie le diagnostic', async ({ page, context }) => {
   await page.click('#demo');
   await page.click('#share');
   const text = await page.evaluate(() => navigator.clipboard.readText());
+  // Introduction chiffrée en tête (choix du 17 oct. 2026), avec le nombre de sessions analysées.
+  expect(text.split('\n')[0]).toBe('Analyse à la MBTI de mes 420 sessions avec Claude Code : 4 axes mesurés, 16 types possibles. Le mien :');
   await expect(page.locator('#diagnosis .type-name')).toHaveText("L'Architecte noctambule (AVPN)");
   expect(text).toContain("L'Architecte noctambule (AVPN)");
   expect(text).toContain(await page.locator('#diagnosis .type-text').textContent());

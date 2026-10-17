@@ -233,7 +233,7 @@ $('json').addEventListener('click', () => download('freudiff-stats.json', new Bl
 $('share').addEventListener('click', async () => {
   // Texte pour LinkedIn : le diagnostic affiché, puis le lien.
   const d = diagnosisTexts(state.profile, state.lang);
-  const text = [t(state.lang, 'ui.shareHeader', { type: d.name }), '', d.text, '', ...d.items.map((x) => `• ${x}`), '', t(state.lang, 'ui.shareFooter')].join('\n');
+  const text = [t(state.lang, 'ui.shareIntro', { sessions: fmtInt(state.lang, state.stats.volume.sessions) }), '', t(state.lang, 'ui.shareHeader', { type: d.name }), '', d.text, '', ...d.items.map((x) => `• ${x}`), '', t(state.lang, 'ui.shareFooter')].join('\n');
   try { await navigator.clipboard.writeText(text); toast(t(state.lang, 'ui.copied')); } catch { toast(t(state.lang, 'ui.clipboardFail')); }
 });
 

@@ -30,6 +30,7 @@ export default {
     clipboardFail: 'Presse-papiers indisponible, téléchargez le PNG.',
     json: 'Exporter le JSON',
     share: 'Copier le texte pour LinkedIn',
+    shareIntro: 'Analyse à la MBTI de mes {sessions} sessions avec Claude Code : 4 axes mesurés, 16 types possibles. Le mien :',
     shareHeader: 'Mon diagnostic Freudiff : {type}',
     shareFooter: 'Test de personnalité à 16 types pour Claude Code, calculé dans le navigateur, rien ne quitte la machine : https://sandjab.github.io/freudiff',
     again: 'Analyser un autre dossier',
