@@ -19,6 +19,8 @@
 **Essayez : [sandjab.github.io/freudiff](https://sandjab.github.io/freudiff)**, ou téléchargez la
 [version hors ligne](https://sandjab.github.io/freudiff/freudiff.html), un seul fichier HTML.
 
+<img src="assets/demo.gif" alt="Démo : la galerie des 16 types, puis le bilan d'exemple et sa carte" width="100%">
+
 ## Pourquoi
 
 Tous les outils de stats Claude Code comptent des tokens. Aucun ne compte combien de fois vous avez

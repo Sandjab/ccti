@@ -20,6 +20,8 @@
 **Try it: [sandjab.github.io/freudiff](https://sandjab.github.io/freudiff)** — or download the
 [offline version](https://sandjab.github.io/freudiff/freudiff.html), a single HTML file.
 
+<img src="assets/demo.gif" alt="Demo: the 16 types gallery, then the example report and its card" width="100%">
+
 ## Why
 
 Every Claude Code stats tool counts tokens. None of them counts how many times you said *no*,
