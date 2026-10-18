@@ -36,6 +36,7 @@ export default {
     shareFooter: '16-type personality test for Claude Code and Codex, computed in the browser, nothing leaves your machine: https://sandjab.github.io/ccti',
     again: 'Analyze another folder',
     addFolder: 'Add a folder', toolClaude: 'Claude Code · {n} sessions', toolCodex: 'Codex · {n} sessions',
+    nothingAdded: 'No new readable session in this folder. Decompress .jsonl.zst files with zstd -d.',
     offline: 'Offline version (HTML file)',
     source: 'Source code',
     footer: 'CCTI stores nothing and sends nothing. Hours are in your time zone ({tz}). Independent project, affiliated with neither Anthropic, OpenAI nor The Myers-Briggs Company.',

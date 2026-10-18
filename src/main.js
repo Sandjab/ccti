@@ -4,13 +4,13 @@ import { detectLang, t, fmtInt, setTool } from './i18n.js';
 import { computeProfile } from './profile.js';
 import { renderCard, CARD_W, CARD_H } from './card.js';
 import { renderDiagnosis, renderSections, diagnosisTexts, renderGallery, h } from './render.js';
-import { accept, classify } from './sources.js';
+import { accept, addBatch } from './sources.js';
 import { createWorker } from './worker-factory.js';
 import DEMO_STATS from './demo.js';
 import CODEX_DEMO from '../codex/demo.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, entries: [], worker: null, demo: false, startedAt: 0 };
+const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
 
@@ -142,16 +142,13 @@ $('fallback').addEventListener('change', () => {
 // ---------- analyse ----------
 function start(entries) {
   showError('');
-  // « Ajouter un dossier » : les fichiers déjà collectés restent ; un même fichier, atteint par deux
-  // chemins différents, n'est compté qu'une fois (clé nom + taille + date, spec § 9).
-  const seen = new Set(), all = [];
-  for (const e of [...state.entries, ...entries]) {
-    const k = `${e.file.name}:${e.file.size}:${e.file.lastModified}`;
-    if (!seen.has(k)) { seen.add(k); all.push(e); }
+  // Les items retenus ne changent qu'à l'arrivée d'un résultat : une analyse annulée ou en erreur
+  // ne se mêle pas au dépôt suivant.
+  const { items: files, added } = addBatch(state.items, entries);
+  if (!added) {
+    if (state.reports) { show('report'); toast(t(state.lang, 'ui.nothingAdded')); return; } // ajout sans rien de nouveau
+    show('intro'); showError(t(state.lang, 'ui.noFiles')); return;
   }
-  const files = classify(all);
-  if (!files.some((f) => !f.skip)) { show('intro'); showError(t(state.lang, 'ui.noFiles')); return; }
-  state.entries = all;
   state.demo = false; state.startedAt = Date.now();
   $('bar').value = 0; $('progress-text').textContent = '';
   show('progress');
@@ -165,12 +162,14 @@ function start(entries) {
         done: fmtInt(state.lang, d.done), total: fmtInt(state.lang, d.total), mb: fmtInt(state.lang, d.bytes / 1e6),
         sessions: fmtInt(state.lang, d.sessions), sec: Math.round((Date.now() - state.startedAt) / 1000),
       });
-    } else if (d.type === 'result') { w.terminate(); state.worker = null; setReports(d.reports); }
+    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; setReports(d.reports); }
   };
-  w.onerror = (err) => { w.terminate(); state.worker = null; show('intro'); showError((err && err.message) || 'Worker error'); };
+  w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
   w.postMessage({ type: 'start', files });
 }
-$('cancel').addEventListener('click', () => { state.scanning = false; if (state.worker) { state.worker.terminate(); state.worker = null; } show('intro'); });
+// Après une annulation ou une erreur : retour au bilan affiché s'il y en a un (ajout d'un dossier), sinon à l'accueil.
+function back() { show(state.reports ? 'report' : 'intro'); }
+$('cancel').addEventListener('click', () => { state.scanning = false; if (state.worker) { state.worker.terminate(); state.worker = null; } back(); });
 // Outils affichés : ceux qui ont au moins une session (à défaut, tous) ; le plus fourni d'abord.
 function setReports(reports) {
   state.reports = reports;
@@ -189,7 +188,7 @@ function selectTool(tool) {
 }
 $('demo').addEventListener('click', () => { state.demo = true; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
 $('again').addEventListener('click', () => {
-  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, entries: [] });
+  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [] });
   state.tool = 'claude'; setTool('claude');
   show('intro');
 });

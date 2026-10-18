@@ -43,3 +43,29 @@ test('fichiers compressés seuls : items Codex marqués skip', () => {
 test('accept : jsonl et jsonl.zst', () => {
   assert.ok(accept('a.jsonl')); assert.ok(accept('rollout-a.jsonl.zst')); assert.ok(!accept('notes.md'));
 });
+
+// « Ajouter un dossier » : chaque lot est trié avec son propre contexte, puis ajouté. Retrier le tout
+// ensemble faisait disparaître des sessions déjà affichées (revue de branche, Important 2).
+import { addBatch } from '../src/sources.js';
+const G = (rel, file = { name: rel.split('/').pop(), size: 1, lastModified: 1 }) => ({ file, rel });
+
+test('ajout : un dossier enfant puis son parent ne fait perdre aucun projet', () => {
+  const s1 = G('-Users-x-Dev-a/s1.jsonl'), s2 = G('-Users-x-Dev-b/s2.jsonl');
+  const first = addBatch([], [s1]);
+  const second = addBatch(first.items, [G('projects/-Users-x-Dev-a/s1.jsonl', s1.file), G('projects/-Users-x-Dev-b/s2.jsonl', s2.file)]);
+  assert.deepEqual(second.items.map((o) => `${o.tool}:${o.sessionId}`).sort(), ['claude:s1', 'claude:s2']);
+  assert.equal(second.added, 1);
+});
+
+test('ajout : une sauvegarde Claude hors projects/ puis ~/.codex garde les sessions Claude', () => {
+  const first = addBatch([], [G('backup/-Users-x-Dev-a/s1.jsonl')]);
+  const second = addBatch(first.items, [G('.codex/sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1.jsonl')]);
+  assert.deepEqual(second.items.map((o) => o.tool), ['claude', 'codex']);
+  assert.equal(second.added, 1);
+});
+
+test('ajout : un dossier Codex compressé seulement n\'ajoute aucune session lisible', () => {
+  const first = addBatch([], [G('projects/-Users-x-Dev-a/s1.jsonl')]);
+  const second = addBatch(first.items, [G('.codex/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst')]);
+  assert.equal(second.added, 0);
+});

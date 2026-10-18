@@ -16,3 +16,22 @@ export function classify(entries) {
   }
   return [...claude.map((it) => ({ ...it, tool: 'claude' })), ...codex];
 }
+
+// Clé d'un fichier : un même fichier atteint par deux chemins (dossier enfant puis parent) n'est compté qu'une fois.
+const keyOf = (f) => `${f.name}:${f.size}:${f.lastModified}`;
+
+// « Ajouter un dossier » : chaque lot déposé est trié seul, avec son propre contexte (racine, projects/),
+// puis ajouté aux items déjà retenus. Un ajout ne reclasse jamais les fichiers d'un lot précédent.
+// added = nombre de fichiers lisibles nouveaux (hors doublons et fichiers compressés).
+export function addBatch(items, entries) {
+  const seen = new Set(items.map((it) => keyOf(it.file)));
+  const out = [...items];
+  let added = 0;
+  for (const it of classify(entries)) {
+    const k = keyOf(it.file);
+    if (seen.has(k)) continue;
+    seen.add(k); out.push(it);
+    if (!it.skip) added++;
+  }
+  return { items: out, added };
+}

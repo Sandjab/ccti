@@ -120,3 +120,51 @@ test('la page /codex/ n\'existe plus', async ({ page }) => {
   const r = await page.goto('/codex/');
   expect(r.status()).toBe(404);
 });
+
+// Fait taire le worker numéro `n` (0 = premier) : l'analyse reste en cours, le temps de cliquer « Annuler ».
+async function hangWorker(page, n) {
+  await page.addInitScript((n) => {
+    const W = window.Worker; let i = 0;
+    window.Worker = function (...a) { const w = new W(...a); if (i++ === n) w.postMessage = () => {}; return w; };
+  }, n);
+}
+
+// Revue de branche, Important 1 : un dépôt annulé ne doit pas se mêler au dépôt suivant.
+test('annuler une analyse puis déposer un autre dossier : rien de l\'analyse annulée', async ({ page }) => {
+  await hangWorker(page, 0);
+  await stubPicker(page, CLAUDE);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#progress')).toBeVisible();
+  await page.click('#cancel');
+  await page.locator('#fallback').setInputFiles('tests/fixtures-codex');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#tools button')).toHaveCount(0);
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+});
+
+test('annuler pendant « Ajouter un dossier » : retour au bilan affiché', async ({ page }) => {
+  await hangWorker(page, 1);
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#progress')).toBeVisible();
+  await page.click('#cancel');
+  await expect(page.locator('#report')).toBeVisible();
+  await expect(page.locator('#card svg')).toContainText('CLID');
+  await expect(page.locator('#tools button')).toHaveCount(0);
+});
+
+// Revue de branche, Important 3 : un ajout sans session lisible le dit, et le bilan reste.
+test('ajouter un dossier Codex compressé seulement : message, bilan inchangé', async ({ page }) => {
+  await stubPicker(page, CLAUDE, ZST_ONLY);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('zstd -d');
+  await expect(page.locator('#report')).toBeVisible();
+  await expect(page.locator('#card svg')).toContainText('CLID');
+});
