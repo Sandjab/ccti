@@ -76,3 +76,23 @@ test('accueil : test de personnalité à 16 types, sans divan, en FR et en EN', 
   await expect(page.locator('h1')).toContainText('16-type');
   await expect(page.locator('body')).not.toContainText(/\bcouch\b/i);
 });
+
+// Issue #7 : pas de défilement horizontal à 320 px ; les histogrammes et la barre de progression ont un nom.
+test('320 px : aucun défilement horizontal sur le bilan', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/');
+  await page.click('#demo');
+  await expect(page.locator('#report')).toBeVisible();
+  const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+  expect(scroll).toBeLessThanOrEqual(client);
+});
+
+test('histogrammes et barre de progression nommés pour les lecteurs d\'écran', async ({ page }) => {
+  await page.goto('/');
+  expect(await page.locator('#bar').getAttribute('aria-labelledby')).toBe('progress-text');
+  await page.click('#demo');
+  const labels = await page.locator('#sections .hist').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') || ''));
+  expect(labels).toHaveLength(2);
+  expect(labels[0]).toContain('00:00');
+  expect(labels[1].length).toBeGreaterThan(20);
+});

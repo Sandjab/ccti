@@ -53,7 +53,8 @@ const wide = (el) => { el.classList.add('wide'); return el; }; // occupe toute l
 function histogram(values, labels, titleOf) {
   const max = Math.max(1, ...values);
   return [
-    h('div', { class: 'hist', role: 'img' }, values.map((v, i) => h('div', {
+    // role=img aplatit les barres : le libellé porte toutes les valeurs pour les lecteurs d'écran (issue #7).
+    h('div', { class: 'hist', role: 'img', 'aria-label': values.map((v, i) => titleOf(i, v)).join(', ') }, values.map((v, i) => h('div', {
       class: 'bar', style: `height:${Math.max(2, Math.round((100 * v) / max))}%`, title: titleOf(i, v), 'aria-label': titleOf(i, v),
     }))),
     h('div', { class: 'hist-labels' }, labels.map((l) => h('span', { text: l }))),
