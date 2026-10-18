@@ -93,7 +93,8 @@ les `.jsonl`. Aucune requête réseau : le décodeur est un fichier du dépôt.
 
 - `ui.covCompressed` : FR « archives .jsonl.zst décompressées », EN « decompressed .jsonl.zst archives ».
 - `ui.covDuplicates` (nouveau) : FR « archives déjà décompressées », EN « already decompressed archives »,
-  affiché juste après `covCompressed`.
+  affiché juste après `covCompressed`. Ces deux catégories d'archives ne s'affichent dans le reçu que si
+  elles comptent au moins un fichier ; le JSON exporté les garde toujours (décision après la revue de branche).
 - `ui.noFiles` et `ui.nothingAdded` (FR, EN) : la consigne « zstd -d » disparaît.
 - `labels.compressedSkipped` (`codex/i18n.js`) : supprimé.
 - README (EN, FR) : « compressed `.jsonl.zst` files are counted, not read » devient : ils sont

@@ -180,8 +180,9 @@ test('reçu de couverture : chaque fichier examiné compté, dans la page et dan
   const receipt = page.locator('#coverage');
   await expect(receipt).toContainText('Fichiers examinés : 9');
   await expect(receipt).toContainText('fichiers Codex : 5');
-  await expect(receipt).toContainText('archives .jsonl.zst décompressées : 0');
-  await expect(receipt).toContainText('archives déjà décompressées : 0');
+  // catégories d'archives à 0 : masquées, pour ne pas encombrer le reçu de qui n'en a pas (le JSON les garde)
+  await expect(receipt).not.toContainText('archives .jsonl.zst décompressées');
+  await expect(receipt).not.toContainText('archives déjà décompressées');
   await expect(receipt).toContainText('illisibles : 1');
   await expect(receipt).toContainText('historiques et index : 2');
   await expect(receipt).toContainText('non reconnus : 1');

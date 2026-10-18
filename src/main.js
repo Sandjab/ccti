@@ -238,7 +238,9 @@ function renderCoverage() {
   $('coverage').hidden = !c;
   if (!c) return;
   const sep = state.lang === 'fr' ? '\u00a0: ' : ': ';
+  // Les catégories d'archives ne s'affichent que si elles comptent un fichier (le JSON exporté les garde).
   const parts = [['covClaude', c.claude], ['covCodex', c.codex], ['covCompressed', c.compressed], ['covDuplicates', c.duplicates], ['covIndex', c.index], ['covUnrecognized', c.unrecognized], ['covUnreadable', c.unreadable]]
+    .filter(([k, v]) => v || (k !== 'covCompressed' && k !== 'covDuplicates'))
     .map(([k, v]) => `${L(k)}${sep}${n(v)}`).join(', ');
   const corrupt = c.corruptLines ? ` ${L('covCorrupt')}${sep}${n(c.corruptLines)}.` : '';
   $('coverage').textContent = `${L('covExamined')}${sep}${n(c.examined)} (${parts}).${corrupt} ${L('covScope')}`;
