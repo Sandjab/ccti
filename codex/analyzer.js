@@ -133,11 +133,64 @@ export class CodexAnalyzer extends Analyzer {
     }
   }
 
-  // tâche 7
-  #tokens() {}
+  // Le cumul total_token_usage croît à chaque réponse du modèle : chaque hausse est un tour,
+  // attribué au modèle du tour en cours (spec CXTI § 4.2 et § 4.4).
+  #tokens(info, ts) {
+    const s = this.s, f = this.f;
+    if (!info || typeof info !== 'object') return;
+    const t = info.total_token_usage, last = info.last_token_usage;
+    if (!t || typeof t !== 'object') return;
+    const cur = { input: t.input_tokens || 0, cached: t.cached_input_tokens || 0, cacheWrite: t.cache_write_input_tokens || 0, output: t.output_tokens || 0 };
+    if (!cur.input && !cur.output) return;     // synthétique (contexte plein) : seul total_tokens est rempli
+    const d = {};
+    for (const k of Object.keys(cur)) d[k] = Math.max(0, cur[k] - f.prev[k]);
+    f.prev = cur;
+    if (!d.input && !d.output) return;         // même cumul répété
+    this._touch(ts);
+    if (f.kind === 'main') s.assistantTurns++; else s.subagentTurns++;
+    let bm = s.byModel.get(f.model);
+    if (!bm) { bm = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite1h: 0, turns: 0 }; s.byModel.set(f.model, bm); }
+    bm.turns++;
+    // entrée lue en cache et entrée écrite en cache font partie de input_tokens : payées une seule fois
+    bm.input += Math.max(0, d.input - d.cached - d.cacheWrite);
+    bm.cacheRead += d.cached; bm.cacheWrite += d.cacheWrite; bm.output += d.output;
+    const ctx = last && typeof last === 'object' ? last.input_tokens || 0 : 0;
+    if (ctx > s.maxContext) s.maxContext = ctx;
+  }
 
-  // tâche 7
-  #item() {}
+  #item(p, metadata, ts) {
+    const s = this.s, f = this.f;
+    switch (p.type) {
+      case 'message': {
+        // rôle user : doublon du message humain, plus le contexte injecté ; il n'est pas lu ici
+        if (p.role !== 'assistant' || (metadata && metadata.delivered_assistant_message)) return;
+        this._touch(ts);
+        if (!Number.isNaN(ts)) f.lastAssistantTs = ts;
+        const text = textOf(p.content, 'output_text');
+        if (text) this._assistantText(text);
+        return;
+      }
+      case 'function_call': {
+        const name = typeof p.name === 'string' ? p.name : 'unknown';
+        this._tool(name);
+        if (name === 'request_user_input' && f.kind === 'main') s.questionsAsked++;
+        const cmd = commandOf(name, parseArgs(p.arguments));
+        if (cmd) this._command(cmd);
+        return;
+      }
+      case 'custom_tool_call': this._tool(typeof p.name === 'string' ? p.name : 'unknown'); return;
+      case 'local_shell_call':
+        this._tool('shell');
+        if (p.action && Array.isArray(p.action.command)) this._command(p.action.command.join(' '));
+        return;
+      case 'web_search_call': this._tool('web_search'); return;
+      case 'function_call_output':
+      case 'custom_tool_call_output':
+        if (REJECTED.test(outputText(p.output))) s.toolDenials++;  // heuristique (spec CXTI § 7)
+        return;
+      default: return;
+    }
+  }
 
   endFile() {
     const f = this.f;
@@ -150,6 +203,13 @@ export class CodexAnalyzer extends Analyzer {
   result() {
     const r = super.result();
     r.volume.compressedSkipped = this.compressedSkipped;
+    // mesures que Codex n'enregistre pas, ou propres à la tarification Anthropic (spec CXTI § 4.3)
+    Object.assign(r.couple, { questionsAnswered: null, interruptionsForTool: null, autoModeBlocks: null, modelRefusalFallbacks: null });
+    r.control.slashCommands = null;
+    Object.assign(r.waste, {
+      turnsOver150k: null, turnsOver150kShare: null, costOver150kUsd: null, costOver150kShare: null,
+      cacheRebuilds: null, cacheRebuildsShortPause: null, cacheRebuildExcessUsd: null,
+    });
     return r;
   }
 }
