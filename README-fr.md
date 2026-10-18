@@ -119,3 +119,4 @@ examinés, lus, écartés, et pourquoi.
 ## Licence
 
 MIT. Fait par [@Sandjab](https://github.com/Sandjab), avec Claude Code.
+`vendor/fzstd.js` est [fzstd](https://github.com/101arrowz/fzstd) 0.1.1, MIT, © 2020 Arjun Barrett.

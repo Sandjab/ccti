@@ -36,3 +36,12 @@ test('fzstd assemblé par wrap décompresse un flux zstd', () => {
   assert.equal(new TextDecoder().decode(m.decompress(zstdCompressSync(Buffer.from(text)))), text);
   assert.equal(typeof m.Decompress, 'function');
 });
+
+// spec .zst § 5 : la mention de licence des README cite fzstd, code tiers livré avec la page.
+test('README : la section Licence cite fzstd et sa licence MIT', () => {
+  for (const [f, h] of [['README.md', '## License'], ['README-fr.md', '## Licence']]) {
+    const src = readFileSync(f, 'utf8');
+    const section = src.slice(src.indexOf(h));
+    assert.ok(src.includes(h) && /fzstd/.test(section) && /Arjun Barrett/.test(section), f);
+  }
+});

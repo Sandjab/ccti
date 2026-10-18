@@ -117,3 +117,4 @@ are not counted. A coverage receipt in the report says how many files were exami
 ## License
 
 MIT. Made by [@Sandjab](https://github.com/Sandjab), with Claude Code.
+`vendor/fzstd.js` is [fzstd](https://github.com/101arrowz/fzstd) 0.1.1, MIT, © 2020 Arjun Barrett.
