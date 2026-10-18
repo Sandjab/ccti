@@ -49,7 +49,11 @@ async function readLines(file, onLine, onBytes, zst) {
 export function runWorker(tools) {
   self.onmessage = async (e) => {
     if (!e.data || e.data.type !== 'start') return;
-    const items = e.data.files;
+    // Une exception dans cette fonction async (bug d'un analyseur) ne déclencherait aucun événement d'erreur
+    // côté page : elle est envoyée comme message, et la page la signale (revue du lot #3/#10).
+    try { await analyze(e.data.files); } catch (err) { self.postMessage({ type: 'error', message: String((err && err.message) || err) }); }
+  };
+  async function analyze(items) {
     const analyzers = new Map();
     const unreadable = {}; // fichiers illisibles, par catégorie du reçu (issue #1)
     const of = (tool) => { if (!analyzers.has(tool)) analyzers.set(tool, tools[tool].make()); return analyzers.get(tool); };
@@ -80,5 +84,5 @@ export function runWorker(tools) {
     const reports = {};
     for (const [tool, a] of analyzers) reports[tool] = a.result();
     self.postMessage({ type: 'result', reports, unreadable, bytes });
-  };
+  }
 }

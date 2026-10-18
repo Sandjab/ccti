@@ -126,3 +126,11 @@ test('archive avec somme de contrôle, et archive à deux trames : même bilan',
     assert.deepEqual(strip(r.reports.codex), plain, name);
   }
 });
+
+// Revue du lot #3/#10 : une exception dans le worker (bug d'un analyseur) remonte à la page sous forme
+// d'un message d'erreur, au lieu de laisser l'analyse en suspens sans fin.
+test('exception pendant l\'analyse : message { type: \'error\' } envoyé à la page', async () => {
+  const r = await run([{ tool: 'inconnu', file: file(CODEX), sessionId: 'a1' }]);
+  assert.equal(r.type, 'error');
+  assert.ok(r.message.length > 0);
+});

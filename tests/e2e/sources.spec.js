@@ -389,3 +389,22 @@ test('Worker refusé dès le premier dossier : retour à l\'accueil avec le mess
   await expect(page.locator('#intro')).toBeVisible();
   await expect(page.locator('#error')).toContainText('worker refusé');
 });
+
+// Revue du lot #3/#10 : le worker signale une exception par un message { type: 'error' } ; la page la dit.
+test('le worker signale une exception pendant un ajout : le bilan reste, l\'erreur est dite', async ({ page }) => {
+  await page.addInitScript(() => {
+    const W = window.Worker; let i = 0;
+    window.Worker = function (...a) {
+      const w = new W(...a);
+      if (i++ === 1) w.postMessage = () => setTimeout(() => w.onmessage({ data: { type: 'error', message: 'analyse en panne' } }));
+      return w;
+    };
+  });
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('analyse en panne');
+  await expect(page.locator('#report')).toBeVisible();
+});

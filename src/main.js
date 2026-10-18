@@ -193,6 +193,8 @@ function start(entries) {
         done: fmtInt(state.lang, d.done), total: fmtInt(state.lang, d.total), mb: fmtInt(state.lang, d.bytes / 1e6),
         sessions: fmtInt(state.lang, d.sessions), sec: Math.round((Date.now() - state.startedAt) / 1000),
       });
+    } else if (d.type === 'error') { // exception dans le worker (revue du lot #3/#10)
+      w.terminate(); state.worker = null; importFailed(d.message);
     } else if (d.type === 'result') {
       w.terminate(); state.worker = null;
       const run = mergeRuns(prev, d, touched);
