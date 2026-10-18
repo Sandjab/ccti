@@ -27,7 +27,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ccti-offline
-          path: dist/ccti.html
+          path: |
+            dist/ccti.html
+            dist/cxti.html
       - name: Assemble site
         run: |
           mkdir -p _site
@@ -35,6 +37,8 @@ jobs:
           mkdir -p _site/assets && cp -r assets/types _site/assets/
           cp assets/card-light.png _site/assets/
           cp dist/ccti.html _site/ccti.html
+          mkdir -p _site/codex && cp codex/index.html codex/*.js _site/codex/
+          cp dist/cxti.html _site/codex/cxti.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

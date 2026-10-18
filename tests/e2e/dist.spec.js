@@ -14,3 +14,17 @@ test('dist/ccti.html en file://', async ({ page }) => {
   await expect(page.locator('#card svg')).toContainText("L'Architecte noctambule");
   expect(urls).toEqual([]);
 });
+
+test('dist/cxti.html en file://', async ({ page }) => {
+  const urls = [];
+  page.on('request', (r) => { const p = new URL(r.url()).protocol; if (p !== 'file:' && p !== 'blob:' && p !== 'data:') urls.push(r.url()); });
+  await page.goto('file://' + path.resolve('dist/cxti.html'));
+  await page.locator('#fallback').setInputFiles('tests/fixtures-codex');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#card svg')).toContainText('CXTI');
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+  await page.reload();
+  await page.click('#demo');
+  await expect(page.locator('#card svg')).toContainText('Le Joueur de YOLO');
+  expect(urls).toEqual([]);
+});
