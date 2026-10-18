@@ -20,17 +20,17 @@ async function stubPicker(page, ...batches) {
     window.showDirectoryPicker = async () => {
       const files = batches[Math.min(call++, batches.length - 1)];
       const tree = { kind: 'directory', name: 'home', children: new Map() };
-      for (const { rel, b64 } of files) {
+      for (const { rel, b64, lastModified } of files) {
         const parts = rel.split('/'); let node = tree;
         for (const p of parts.slice(0, -1)) {
           if (!node.children.has(p)) node.children.set(p, { kind: 'directory', name: p, children: new Map() });
           node = node.children.get(p);
         }
-        node.children.set(parts.at(-1), { kind: 'file', name: parts.at(-1), b64 });
+        node.children.set(parts.at(-1), { kind: 'file', name: parts.at(-1), b64, lastModified });
       }
       let t = 0;
       const wrap = (n) => n.kind === 'file'
-        ? { kind: 'file', name: n.name, getFile: async () => new File([Uint8Array.from(atob(n.b64), (c) => c.charCodeAt(0))], n.name, { lastModified: 1_700_000_000_000 + (t++) }) }
+        ? { kind: 'file', name: n.name, getFile: async () => { const lm = 1_700_000_000_000 + (t++); return new File([Uint8Array.from(atob(n.b64), (c) => c.charCodeAt(0))], n.name, { lastModified: n.lastModified ?? lm }); } }
         : { kind: 'directory', name: n.name, async *entries() { for (const [k, c] of n.children) yield [k, wrap(c)]; } };
       return wrap(tree);
     };
@@ -182,7 +182,7 @@ test('reçu de couverture : chaque fichier examiné compté, dans la page et dan
   await expect(receipt).toContainText('fichiers Codex : 5');
   // catégories d'archives à 0 : masquées, pour ne pas encombrer le reçu de qui n'en a pas (le JSON les garde)
   await expect(receipt).not.toContainText('archives .jsonl.zst décompressées');
-  await expect(receipt).not.toContainText('archives déjà décompressées');
+  await expect(receipt).not.toContainText('doublons d\'une session déjà lue');
   await expect(receipt).toContainText('illisibles : 1');
   await expect(receipt).toContainText('historiques et index : 2');
   await expect(receipt).toContainText('non reconnus : 1');
@@ -211,7 +211,7 @@ test('ajouter l\'archive d\'une session déjà lue : bilan inchangé, reçu à j
   await page.click('#add');
   await expect(page.locator('#toast')).toContainText('Aucune nouvelle session lisible');
   await expect(page.locator('#coverage')).toContainText('Fichiers examinés : 10');
-  await expect(page.locator('#coverage')).toContainText('archives déjà décompressées : 1');
+  await expect(page.locator('#coverage')).toContainText('doublons d\'une session déjà lue : 1');
   await expect(page.locator('#card svg')).toContainText('CLPN');
 });
 
@@ -228,4 +228,24 @@ test('zone de dépôt : un seul contrôle, le bouton « Choisir le dossier »', 
   await page.focus('#pick');
   await page.keyboard.press('Enter');
   await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+});
+
+// Issue #2, point 2 : réajouter un dossier dont une session a grandi ne la compte pas deux fois.
+const B5 = '.claude/projects/-Users-test-Dev-beta/b5555555-0000-0000-0000-000000000005.jsonl';
+const grow = (batch) => batch.map((f) => (f.rel === B5
+  ? { ...f, b64: Buffer.concat([Buffer.from(f.b64, 'base64'), Buffer.from('\n')]).toString('base64'), lastModified: 1_800_000_000_000 }
+  : f));
+
+test('réajouter un dossier dont une session a grandi : pas de double comptage', async ({ page }) => {
+  expect(CLAUDE.some((f) => f.rel === B5)).toBe(true);
+  await stubPicker(page, CLAUDE, grow(CLAUDE));
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#card svg')).toContainText('CLID');
+  await page.click('#add');
+  await expect(page.locator('#coverage')).toContainText('doublons d\'une session déjà lue : 1', { timeout: 30_000 });
+  const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
+  const { stats } = JSON.parse(readFileSync(await json.path(), 'utf8'));
+  expect(stats.volume.sessions).toBe(7);
 });

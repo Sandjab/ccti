@@ -22,12 +22,12 @@ test('les .jsonl.zst sont gardés pour être décompressés, marqués zst', () =
 });
 
 // zstd -d garde l'archive : la même session sous les deux formes n'est lue qu'une fois, en .jsonl (spec .zst, décision 5).
-test('même lot : l\'archive d\'une session présente en .jsonl est écartée', () => {
+test('même lot : l\'archive et son .jsonl sont tous deux classés (addBatch choisit)', () => {
   const out = classify([
     F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst'),
     F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl'),
   ]);
-  assert.deepEqual(out.map((o) => [o.sessionId, !!o.zst]), [['rollout-2026-09-01T10-00-00-f6', false]]);
+  assert.deepEqual(out.map((o) => !!o.zst), [true, false]);
 });
 
 test('accept : jsonl et jsonl.zst seulement', () => {

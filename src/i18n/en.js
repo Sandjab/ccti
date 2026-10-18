@@ -39,7 +39,7 @@ export default {
     nothingAdded: 'No new readable session in this folder.',
     limits: "Only sessions on this device are read: not cloud sessions, and not the ones Claude Code already deleted (after 30 days by default, cleanupPeriodDays setting). For another device, copy its folder here and add it.",
     covExamined: 'Files examined', covClaude: 'Claude Code files', covCodex: 'Codex files',
-    covCompressed: 'decompressed .jsonl.zst archives', covDuplicates: 'already decompressed archives', covIndex: 'history and index files', covUnrecognized: 'unrecognized',
+    covCompressed: 'decompressed .jsonl.zst archives', covDuplicates: 'duplicates of a session already read', covIndex: 'history and index files', covUnrecognized: 'unrecognized',
     covUnreadable: 'unreadable', covCorrupt: 'Corrupt lines skipped',
     covScope: 'This report covers these files only, on this device.',
     offline: 'Offline version (HTML file)',

@@ -103,9 +103,9 @@ const PLAIN = G(`.codex/sessions/2026/09/01/${ID}.jsonl`), ARCH = G(`.codex/sess
 const sum = ({ examined, ...parts }) => [examined, Object.values(parts).reduce((a, b) => a + b, 0)];
 
 test('doublon dans un même lot : le .jsonl est lu, l\'archive comptée en duplicates', () => {
-  const { items } = addBatch([], [ARCH, PLAIN]);
+  const { items, dups } = addBatch([], [ARCH, PLAIN]);
   assert.deepEqual(items.map((o) => !!o.zst), [false]);
-  const c = coverage([ARCH, PLAIN], items);
+  const c = coverage([ARCH, PLAIN], items, dups);
   assert.equal(c.codex, 1); assert.equal(c.compressed, 0); assert.equal(c.duplicates, 1);
   const [examined, total] = sum(c); assert.equal(total, examined);
 });
@@ -115,14 +115,62 @@ test('doublon par ajout, .jsonl puis archive : rien d\'ajouté', () => {
   const second = addBatch(first.items, [ARCH]);
   assert.equal(second.added, 0);
   assert.deepEqual(second.items.map((o) => !!o.zst), [false]);
-  assert.equal(coverage([PLAIN, ARCH], second.items).duplicates, 1);
+  assert.equal(coverage([PLAIN, ARCH], second.items, second.dups).duplicates, 1);
 });
 
 test('doublon par ajout, archive puis .jsonl : le .jsonl remplace l\'archive', () => {
   const first = addBatch([], [ARCH]);
   const second = addBatch(first.items, [PLAIN]);
   assert.deepEqual(second.items.map((o) => [o.sessionId, !!o.zst]), [[ID, false]]);
-  const c = coverage([ARCH, PLAIN], second.items);
+  const c = coverage([ARCH, PLAIN], second.items, second.dups);
   assert.equal(c.duplicates, 1); assert.equal(c.compressed, 0);
   const [examined, total] = sum(c); assert.equal(total, examined);
+});
+
+// Issue #2, point 2 : un fichier réajouté après avoir grandi n'est lu qu'une fois, dans sa dernière version.
+const S1 = 'projects/-Users-x-Dev-a/s1.jsonl';
+const at = (rel, size, lastModified) => G(rel, { name: rel.split('/').pop(), size, lastModified });
+
+test('fichier réajouté après avoir grandi : la nouvelle version remplace l\'ancienne', () => {
+  const old = at(S1, 10, 1), grown = at(S1, 20, 2);
+  const first = addBatch([], [old]);
+  const second = addBatch(first.items, [grown]);
+  assert.equal(second.items.length, 1);
+  assert.equal(second.items[0].file, grown.file);
+  assert.equal(second.added, 1);
+  assert.deepEqual([...second.touched], ['claude']);
+  const c = coverage([old, grown], second.items, [...first.dups, ...second.dups]);
+  assert.equal(c.claude, 1); assert.equal(c.duplicates, 1);
+  const [examined, total] = sum(c); assert.equal(total, examined);
+});
+
+test('version plus ancienne réajoutée : rien d\'ajouté, elle compte en doublon', () => {
+  const grown = at(S1, 20, 2), old = at(S1, 10, 1);
+  const first = addBatch([], [grown]);
+  const second = addBatch(first.items, [old]);
+  assert.equal(second.added, 0);
+  assert.equal(second.touched.size, 0);
+  assert.deepEqual(second.items.map((o) => o.file), [grown.file]);
+  assert.equal(coverage([grown, old], second.items, second.dups).duplicates, 1);
+});
+
+test('même date : la plus grosse version l\'emporte ; égalité totale : la version déjà retenue reste', () => {
+  const small = at(S1, 10, 5), big = at(S1, 20, 5);
+  assert.equal(addBatch(addBatch([], [small]).items, [big]).items[0].file, big.file);
+  const a = at(S1, 10, 5), b = at(S1, 10, 5);
+  b.file = { ...b.file }; // même nom, même taille, même date, mais un autre objet File : même clé, ignoré
+  assert.equal(addBatch(addBatch([], [a]).items, [b]).items[0].file, a.file);
+});
+
+test('deux fichiers de sous-agents d\'une même session Claude : tous deux retenus', () => {
+  const { items } = addBatch([], [G('projects/-Users-x-Dev-a/s1/subagents/agent-1.jsonl'), G('projects/-Users-x-Dev-a/s1/subagents/agent-2.jsonl')]);
+  assert.equal(items.length, 2);
+});
+
+test('une session Codex dans deux dossiers d\'un même lot : une seule retenue, la plus récente', () => {
+  const name = 'rollout-2026-10-05T22-00-00-a1.jsonl';
+  const a = at(`.codex/sessions/2026/10/05/${name}`, 10, 1), b = at(`.codex/archived_sessions/${name}`, 10, 2);
+  const { items, dups } = addBatch([], [a, b]);
+  assert.deepEqual(items.map((o) => o.file), [b.file]);
+  assert.equal(coverage([a, b], items, dups).duplicates, 1);
 });

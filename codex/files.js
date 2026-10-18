@@ -11,7 +11,5 @@ export function classify(entries) {
     // compressé (zstd) : décompressé en flux par le worker (spec .zst § 4)
     else if (name.endsWith('.jsonl.zst')) out.push({ file, sessionId: name.slice(0, -10), zst: true });
   }
-  // zstd -d garde l'archive : si le .jsonl de la même session est là, il l'emporte (spec .zst, décision 5).
-  const plain = new Set(out.filter((o) => !o.zst).map((o) => o.sessionId));
-  return out.filter((o) => !(o.zst && plain.has(o.sessionId)));
+  return out; // entre une archive et son .jsonl, addBatch choisit (spec issue #2 § 3)
 }

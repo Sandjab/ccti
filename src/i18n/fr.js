@@ -39,7 +39,7 @@ export default {
     nothingAdded: 'Aucune nouvelle session lisible dans ce dossier.',
     limits: "Seules les sessions présentes sur cet appareil sont lues : ni les sessions dans le cloud, ni celles que Claude Code a déjà effacées (après 30 jours par défaut, réglage cleanupPeriodDays). Pour un autre appareil, copiez son dossier ici et ajoutez-le.",
     covExamined: 'Fichiers examinés', covClaude: 'fichiers Claude Code', covCodex: 'fichiers Codex',
-    covCompressed: 'archives .jsonl.zst décompressées', covDuplicates: 'archives déjà décompressées', covIndex: 'historiques et index', covUnrecognized: 'non reconnus',
+    covCompressed: 'archives .jsonl.zst décompressées', covDuplicates: 'doublons d\'une session déjà lue', covIndex: 'historiques et index', covUnrecognized: 'non reconnus',
     covUnreadable: 'illisibles', covCorrupt: 'Lignes corrompues ignorées',
     covScope: 'Ce bilan ne couvre que ces fichiers, sur cet appareil.',
     offline: 'Version hors ligne (fichier HTML)',

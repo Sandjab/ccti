@@ -20,43 +20,46 @@ export function classify(entries) {
 // Clé d'un fichier : un même fichier atteint par deux chemins (dossier enfant puis parent) n'est compté qu'une fois.
 const keyOf = (f) => `${f.name}:${f.size}:${f.lastModified}`;
 
+// Identité d'un fichier de session, stable quand il grandit (spec issue #2 § 3). Les fichiers de
+// sous-agents Claude partagent le sessionId de leur session parente : leur nom les distingue.
+const identity = (it) => (it.tool === 'codex' ? `codex:${it.sessionId}` : `claude:${it.slug}:${it.kind}:${it.sessionId}:${it.file.name}`);
+// a vaut-il mieux que b, à identité égale ? Le .jsonl l'emporte sur l'archive, puis le plus récent,
+// puis le plus gros ; à égalité, b (déjà retenu) reste (spec issue #2, décision 2).
+function better(a, b) {
+  if (!a.zst !== !b.zst) return !a.zst;
+  if (a.file.lastModified !== b.file.lastModified) return a.file.lastModified > b.file.lastModified;
+  return a.file.size > b.file.size;
+}
+
 // « Ajouter un dossier » : chaque lot déposé est trié seul, avec son propre contexte (racine, projects/),
 // puis ajouté aux items déjà retenus. Un ajout ne reclasse jamais les fichiers d'un lot précédent.
-// Une session Codex déjà retenue sous l'autre forme n'est lue qu'une fois : le .jsonl l'emporte (spec .zst, décision 5).
-// added = nombre de fichiers nouveaux retenus (hors doublons).
+// Une session n'est retenue qu'une fois par identité (spec issue #2 § 3).
+// added : items nouveaux ou remplaçants ; touched : leurs outils ; dups : clés des fichiers mis de côté.
 export function addBatch(items, entries) {
   const seen = new Set(items.map((it) => keyOf(it.file)));
-  const codex = new Map(items.filter((it) => it.tool === 'codex').map((it) => [it.sessionId, it])); // sessionId → item retenu
-  let out = [...items];
-  let added = 0;
+  const byId = new Map(items.map((it) => [identity(it), it]));
+  const fresh = new Set();
+  const dups = [];
   for (const it of classify(entries)) {
     const k = keyOf(it.file);
-    if (seen.has(k)) continue;
-    if (it.tool === 'codex') {
-      const twin = codex.get(it.sessionId);
-      if (twin && !twin.zst !== !it.zst) {
-        if (it.zst) continue;                              // archive d'une session déjà lue en .jsonl
-        out = out.filter((o) => o !== twin);               // le .jsonl remplace l'archive retenue plus tôt
-      }
-      codex.set(it.sessionId, it);
-    }
-    seen.add(k); out.push(it);
-    added++;
+    if (seen.has(k)) continue; // même fichier atteint par deux chemins
+    seen.add(k);
+    const id = identity(it), held = byId.get(id);
+    if (held && !better(it, held)) { dups.push(k); continue; }
+    if (held) { dups.push(keyOf(held.file)); fresh.delete(held); }
+    byId.set(id, it); fresh.add(it);
   }
-  return { items: out, added };
+  return { items: [...byId.values()], added: fresh.size, touched: new Set([...fresh].map((it) => it.tool)), dups };
 }
 
 // Fichiers d'historique ou d'index connus (Claude Code et Codex) : ce ne sont pas des sessions.
 const INDEX = new Set(['history.jsonl', 'session_index.jsonl']);
 
-// Archive Codex : son sessionId, sinon null.
-const archiveId = (name) => (name.startsWith('rollout-') && name.endsWith('.jsonl.zst') ? name.slice(0, -10) : null);
-
 // Reçu de couverture (issue #1) : chaque fichier examiné, compté une fois, tombe dans une seule catégorie.
 // Seulement des nombres : aucun nom, chemin ni identifiant.
-export function coverage(entries, items) {
+export function coverage(entries, items, dups = []) {
   const byKey = new Map(items.map((it) => [keyOf(it.file), it]));
-  const plainCodex = new Set(items.filter((it) => it.tool === 'codex' && !it.zst).map((it) => it.sessionId));
+  const dup = new Set(dups);
   const seen = new Set();
   const c = { examined: 0, claude: 0, codex: 0, compressed: 0, duplicates: 0, index: 0, unrecognized: 0 };
   for (const { file } of entries) {
@@ -65,7 +68,7 @@ export function coverage(entries, items) {
     seen.add(k); c.examined++;
     const it = byKey.get(k);
     if (it) c[it.zst ? 'compressed' : it.tool]++;
-    else if (plainCodex.has(archiveId(file.name))) c.duplicates++; // archive déjà décompressée (spec .zst, décision 5)
+    else if (dup.has(k)) c.duplicates++; // doublon d'une session déjà lue (spec issue #2 § 3)
     else if (INDEX.has(file.name)) c.index++;
     else c.unrecognized++;
   }
