@@ -165,3 +165,24 @@ test('contexte injecté en user_message : pas un message humain', () => {
   assert.equal(r.volume.medianCleanLength, 'lance les tests'.length);
   assert.equal(r.control.plannedSessions, 0);
 });
+
+// Revue issue #2, mineur 1 : l'aide de test choisit entre une archive et son .jsonl comme la page
+// (addBatch), sinon une fixture qui contiendrait les deux serait lue deux fois.
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync as readFile } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { zstdCompressSync } from 'node:zlib';
+
+test('analyzeDir : une session présente en .jsonl et en .jsonl.zst n\'est lue qu\'une fois', () => {
+  const A1 = 'tests/fixtures-codex/sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1.jsonl';
+  const make = (withArchive) => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'ccti-pair-')), 'sessions');
+    mkdirSync(dir, { recursive: true });
+    copyFileSync(A1, join(dir, 'rollout-2026-10-05T22-00-00-a1.jsonl'));
+    if (withArchive) writeFileSync(join(dir, 'rollout-2026-10-05T22-00-00-a1.jsonl.zst'), zstdCompressSync(readFile(A1)));
+    return analyzeDir(dir);
+  };
+  const plain = make(false), pair = make(true);
+  assert.equal(pair.volume.sessions, plain.volume.sessions);
+  assert.equal(pair.volume.humanMessages, plain.volume.humanMessages);
+});
