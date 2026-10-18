@@ -116,7 +116,6 @@ const drop = $('drop');
 drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
 drop.addEventListener('drop', handleDrop);
-drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('pick').click(); } });
 document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => e.preventDefault());
 // Sélecteur de dossier : depuis l'accueil, ou depuis le bilan pour ajouter le dossier de l'autre outil.

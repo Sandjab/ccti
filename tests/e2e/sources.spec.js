@@ -214,3 +214,18 @@ test('ajouter l\'archive d\'une session déjà lue : bilan inchangé, reçu à j
   await expect(page.locator('#coverage')).toContainText('archives déjà décompressées : 1');
   await expect(page.locator('#card svg')).toContainText('CLPN');
 });
+
+// Issue #2, point 1 : la zone de dépôt n'est plus un bouton qui en contient un autre ; « Choisir le
+// dossier » est le seul contrôle, utilisable au clavier.
+test('zone de dépôt : un seul contrôle, le bouton « Choisir le dossier »', async ({ page }) => {
+  await stubPicker(page, CLAUDE);
+  await page.goto('/');
+  const drop = page.locator('#drop');
+  expect(await drop.getAttribute('role')).toBeNull();
+  expect(await drop.getAttribute('tabindex')).toBeNull();
+  const focusables = await drop.evaluate((el) => [...el.querySelectorAll('button, a[href], input:not([hidden]), [tabindex]')].map((x) => x.id));
+  expect(focusables).toEqual(['pick']);
+  await page.focus('#pick');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+});

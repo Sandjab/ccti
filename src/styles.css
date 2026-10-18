@@ -32,7 +32,7 @@ h2, h3 { font-family: var(--display); line-height: 1.2; }
 h3 { font-size: 1rem; margin: 18px 0 6px; color: var(--muted); font-weight: 600; }
 .pitch { font-size: 1.1rem; max-width: 62ch; margin: 0 0 1rem; }
 .drop { border: 2px dashed var(--rule); background: var(--surface); border-radius: 8px; padding: 40px 24px; text-align: center; margin: 20px 0 8px; transition: border-color .15s, background .15s; }
-.drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+.drop.over { border-color: var(--accent); }
 .drop-hint { font-family: var(--display); font-size: 1.15rem; margin: 0 0 14px; }
 .drop-or { margin: 0; color: var(--muted); }
 button { font: inherit; cursor: pointer; border: 1.5px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 8px 14px; }
