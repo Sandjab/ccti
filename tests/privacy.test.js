@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 test('aucune string > 80 caractères, aucun chemin, hors meta', () => {
-  const out = path.join(mkdtempSync(path.join(tmpdir(), 'freudiff-')), 'stats.json');
+  const out = path.join(mkdtempSync(path.join(tmpdir(), 'ccti-')), 'stats.json');
   execFileSync(process.execPath, ['scripts/cli.mjs', 'tests/fixtures/projects', '--json', out], { stdio: 'pipe' });
   const { stats, profile } = JSON.parse(readFileSync(out, 'utf8'));
   const strings = [];

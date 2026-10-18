@@ -8,7 +8,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 
 export function detectLang(nav = globalThis.navigator) {
   try {
-    const saved = globalThis.localStorage && localStorage.getItem('freudiff.lang');
+    const saved = globalThis.localStorage && localStorage.getItem('ccti.lang');
     if (saved && LANGS[saved]) return saved;
   } catch {}
   const l = (nav && nav.language) || 'en';

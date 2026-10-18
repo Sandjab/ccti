@@ -1,7 +1,7 @@
 // src/worker-factory.js — Worker module en dev/Pages, Worker Blob dans le fichier autonome (build).
 export function createWorker() {
-  if (globalThis.FREUDIFF_WORKER_SRC) {
-    const url = URL.createObjectURL(new Blob([globalThis.FREUDIFF_WORKER_SRC], { type: 'text/javascript' }));
+  if (globalThis.CCTI_WORKER_SRC) {
+    const url = URL.createObjectURL(new Blob([globalThis.CCTI_WORKER_SRC], { type: 'text/javascript' }));
     return new Worker(url);
   }
   return createModuleWorker();

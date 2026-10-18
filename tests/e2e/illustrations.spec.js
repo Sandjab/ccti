@@ -27,7 +27,7 @@ test('l\'accueil présente les 16 types en galerie', async ({ page }) => {
 
 // Le fichier autonome n'embarque pas les images : pas d'icône d'image cassée, pas de requête.
 test('fichier hors ligne : illustration absente masquée proprement', async ({ page }) => {
-  await page.goto('file://' + path.resolve('dist/freudiff.html'));
+  await page.goto('file://' + path.resolve('dist/ccti.html'));
   await page.click('#demo');
   await expect(page.locator('#card svg')).toContainText("L'Architecte noctambule");
   await expect(page.locator('#card svg image')).toHaveCount(0);

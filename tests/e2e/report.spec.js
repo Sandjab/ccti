@@ -22,7 +22,7 @@ test('télécharger le bilan complet en PNG', async ({ page }) => {
   await page.goto('/');
   await page.click('#demo');
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#png-full')]);
-  expect(dl.suggestedFilename()).toBe('freudiff-AVPN-full.png');
+  expect(dl.suggestedFilename()).toBe('ccti-AVPN-full.png');
   const buf = readFileSync(await dl.path());
   expect(buf.subarray(1, 4).toString()).toBe('PNG');
   const width = buf.readUInt32BE(16), height = buf.readUInt32BE(20);
@@ -64,7 +64,7 @@ test('le bouton LinkedIn copie le diagnostic', async ({ page, context }) => {
   expect(text).toContain("L'Architecte noctambule (AVPN)");
   expect(text).toContain((await page.locator('#card .type-text tspan').allTextContents()).join(' '));
   for (const li of await page.locator('#diagnosis li').allTextContents()) expect(text).toContain(`• ${li}`);
-  expect(text).toContain('https://sandjab.github.io/freudiff');
+  expect(text).toContain('https://sandjab.github.io/ccti');
 });
 
 // Positionnement : un test de personnalité à 16 types, plus la métaphore du divan.

@@ -161,5 +161,5 @@ for (const f of files) {
   await writeFile(full, f.content);
 }
 await mkdir(path.join(ROOT, ALPHA.slug, 'memory'), { recursive: true });
-await writeFile(path.join(ROOT, ALPHA.slug, 'memory', 'notes.md'), '# ignoré par Freudiff\n');
+await writeFile(path.join(ROOT, ALPHA.slug, 'memory', 'notes.md'), '# ignoré par CCTI\n');
 console.log(`${files.length} fichiers écrits sous ${ROOT}`);

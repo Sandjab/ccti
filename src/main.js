@@ -11,7 +11,7 @@ const $ = (id) => document.getElementById(id);
 const state = { lang: detectLang(), stats: null, profile: null, worker: null, demo: false, startedAt: 0 };
 
 // ---------- thème et langue ----------
-try { const th = localStorage.getItem('freudiff.theme'); if (th === 'dark' || th === 'light') document.documentElement.dataset.theme = th; } catch {}
+try { const th = localStorage.getItem('ccti.theme'); if (th === 'dark' || th === 'light') document.documentElement.dataset.theme = th; } catch {}
 function currentTheme() {
   const forced = document.documentElement.dataset.theme;
   if (forced === 'dark' || forced === 'light') return forced;
@@ -27,16 +27,16 @@ function applyI18n() {
   if (state.stats) renderReport();
 }
 // Fichier hors ligne : les illustrations n'y sont pas, la galerie disparaît au premier échec.
-$('types-gallery').addEventListener('freudiff:missing', () => { $('types').hidden = true; });
+$('types-gallery').addEventListener('ccti:missing', () => { $('types').hidden = true; });
 $('lang').addEventListener('click', () => {
   state.lang = state.lang === 'fr' ? 'en' : 'fr';
-  try { localStorage.setItem('freudiff.lang', state.lang); } catch {}
+  try { localStorage.setItem('ccti.lang', state.lang); } catch {}
   applyI18n();
 });
 $('theme').addEventListener('click', () => {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  try { localStorage.setItem('freudiff.theme', next); } catch {}
+  try { localStorage.setItem('ccti.theme', next); } catch {}
   if (state.stats) renderReport();
 });
 
@@ -253,15 +253,15 @@ async function reportSvg() {
 }
 $('png').addEventListener('click', async () => {
   const svg = await currentSvg();
-  try { download(`freudiff-${state.profile.code}.png`, await svgToPng(svg)); }
-  catch { download(`freudiff-${state.profile.code}.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
+  try { download(`ccti-${state.profile.code}.png`, await svgToPng(svg)); }
+  catch { download(`ccti-${state.profile.code}.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
 $('png-full').addEventListener('click', async () => {
   const { svg, width, height } = await reportSvg();
-  try { download(`freudiff-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
-  catch { download(`freudiff-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
+  try { download(`ccti-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
+  catch { download(`ccti-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
-$('json').addEventListener('click', () => download('freudiff-stats.json', new Blob([JSON.stringify({ stats: state.stats, profile: state.profile }, null, 2)], { type: 'application/json' })));
+$('json').addEventListener('click', () => download('ccti-stats.json', new Blob([JSON.stringify({ stats: state.stats, profile: state.profile }, null, 2)], { type: 'application/json' })));
 $('share').addEventListener('click', async () => {
   // Texte pour LinkedIn : le diagnostic affiché, puis le lien.
   const d = diagnosisTexts(state.profile, state.lang);

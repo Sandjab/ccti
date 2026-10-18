@@ -1,4 +1,4 @@
-// scripts/build.mjs — inline CSS + modules ES (réécrits en IIFE) → dist/freudiff.html (spec § 7.3).
+// scripts/build.mjs — inline CSS + modules ES (réécrits en IIFE) → dist/ccti.html (spec § 7.3).
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -33,8 +33,8 @@ const css = await readFile('src/styles.css', 'utf8');
 let html = await readFile('index.html', 'utf8');
 // Remplacement par fonction : avec une chaîne, `$\`` et `$$` dans le code inliné seraient interprétés par String.replace.
 html = html.replace('<link rel="stylesheet" href="src/styles.css">', () => `<style>\n${css}\n</style>`);
-html = html.replace('<script type="module" src="src/main.js"></script>', () => `<script>\nglobalThis.FREUDIFF_WORKER_SRC = ${JSON.stringify(workerSrc)};\n${mainSrc}\n</script>`);
+html = html.replace('<script type="module" src="src/main.js"></script>', () => `<script>\nglobalThis.CCTI_WORKER_SRC = ${JSON.stringify(workerSrc)};\n${mainSrc}\n</script>`);
 if (html.includes('src="src/main.js"') || html.includes('href="src/styles.css"')) throw new Error('inline incomplet');
 await mkdir('dist', { recursive: true });
-await writeFile('dist/freudiff.html', html);
-console.log(`dist/freudiff.html : ${(html.length / 1024).toFixed(0)} Ko`);
+await writeFile('dist/ccti.html', html);
+console.log(`dist/ccti.html : ${(html.length / 1024).toFixed(0)} Ko`);

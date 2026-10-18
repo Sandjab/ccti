@@ -112,7 +112,7 @@ test('listSessionFiles lit les sous-agents de workflow rangés sous subagents/wo
   const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const path = (await import('node:path')).default;
-  const root = mkdtempSync(path.join(tmpdir(), 'freudiff-wf-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'ccti-wf-'));
   const proj = path.join(root, '-Users-x-Dev-a');
   mkdirSync(path.join(proj, 's1', 'subagents', 'workflows', 'wf_1-2'), { recursive: true });
   writeFileSync(path.join(proj, 's1.jsonl'), '\n');

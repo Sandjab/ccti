@@ -1,12 +1,12 @@
-# Freudiff
+# CCTI — Claude Code Type Indicator
 
 > 🇬🇧 **English** (you are here) · 🇫🇷 [Français](README-fr.md)
 
-[![CI](https://github.com/Sandjab/freudiff/actions/workflows/ci.yml/badge.svg)](https://github.com/Sandjab/freudiff/actions/workflows/ci.yml)
+[![CI](https://github.com/Sandjab/ccti/actions/workflows/ci.yml/badge.svg)](https://github.com/Sandjab/ccti/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Site](https://img.shields.io/badge/site-sandjab.github.io%2Ffreudiff-1F4B3A)](https://sandjab.github.io/freudiff)
+[![Site](https://img.shields.io/badge/site-sandjab.github.io%2Fccti-1F4B3A)](https://sandjab.github.io/ccti)
 
-> **You and Claude Code in four letters: a 16-type personality test.**
+> **You and Claude Code in four letters: a 16-type personality test, a pastiche of MBTI (Myers-Briggs Type Indicator).**
 > Drop your `~/.claude/projects` folder on a page. Four measured axes give you one of sixteen
 > types, in the spirit of MBTI-style tests. You also get the counters nobody
 > dares to keep, an API-equivalent bill, a diagnosis with teeth, and a card to share.
@@ -14,11 +14,11 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/card-dark.png">
-  <img src="assets/card-light.png" alt="A Freudiff session card: The Night Architect, four gauges, three numbers" width="100%">
+  <img src="assets/card-light.png" alt="A CCTI session card: The Night Architect, four gauges, three numbers" width="100%">
 </picture>
 
-**Try it: [sandjab.github.io/freudiff](https://sandjab.github.io/freudiff)** — or download the
-[offline version](https://sandjab.github.io/freudiff/freudiff.html), a single HTML file.
+**Try it: [sandjab.github.io/ccti](https://sandjab.github.io/ccti)** — or download the
+[offline version](https://sandjab.github.io/ccti/ccti.html), a single HTML file.
 
 <img src="assets/demo.gif" alt="Demo: the 16 types gallery, then the example report and its card" width="100%">
 
@@ -26,7 +26,7 @@
 
 Every Claude Code stats tool counts tokens. None of them counts how many times you said *no*,
 how often Claude told you that you were absolutely right, or how many sessions you ended in all
-caps at 2 am. Freudiff does. It is a personality test for the pair you and Claude Code have become,
+caps at 2 am. CCTI does. It is a personality test for the pair you and Claude Code have become,
 with a bill at the end because somebody has to say it.
 
 ## What you get
@@ -46,7 +46,7 @@ with a bill at the end because somebody has to say it.
 
 ## The sixteen types
 
-Four axes, two poles each, one letter per axis. Freudiff is not affiliated with The Myers-Briggs Company; MBTI is their trademark.
+Four axes, two poles each, one letter per axis. CCTI is not affiliated with The Myers-Briggs Company; MBTI is their trademark. CCTI is an independent project, not affiliated with Anthropic; Claude is a trademark of Anthropic.
 
 <table>
   <tr><td><img src="assets/types/en/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/en/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/en/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/en/CVIN.webp" alt="CVIN" width="200"></td></tr>
@@ -98,10 +98,10 @@ public API grid in `src/pricing.js`; the bill is an estimate, your subscription 
 ## Run locally
 
 ```bash
-git clone https://github.com/Sandjab/freudiff && cd freudiff
+git clone https://github.com/Sandjab/ccti && cd ccti
 npm install
 npm test                 # unit tests, fixtures, privacy guard
-npm run build            # dist/freudiff.html, the single-file version
+npm run build            # dist/ccti.html, the single-file version
 npm run e2e              # Playwright, Chromium
 node scripts/cli.mjs ~/.claude/projects --lang en   # same analysis from the terminal
 ```

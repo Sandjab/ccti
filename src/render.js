@@ -31,7 +31,7 @@ export function diagnosisTexts(profile, lang) {
 // en cas d'échec de chargement, l'image est masquée plutôt qu'affichée cassée.
 export function typeImage(code, lang, attrs = {}) {
   const img = h('img', { alt: `${t(lang, `types.${code}.name`)} (${code})`, width: 800, height: 800, decoding: 'async', ...attrs });
-  img.addEventListener('error', () => { img.style.display = 'none'; img.dispatchEvent(new Event('freudiff:missing', { bubbles: true })); });
+  img.addEventListener('error', () => { img.style.display = 'none'; img.dispatchEvent(new Event('ccti:missing', { bubbles: true })); });
   img.src = `assets/types/${lang}/${code}.webp`;
   return img;
 }

@@ -1,4 +1,4 @@
-/* Freudiff — le cabinet. Tokens sur :root, sombre via media query et data-theme. */
+/* CCTI — le cabinet. Tokens sur :root, sombre via media query et data-theme. */
 :root {
   --bg: #E6E9E2; --surface: #F8F7F2; --ink: #17211C; --muted: #5C6760; --rule: #C3CAC0;
   --accent: #1F4B3A; --brass: #B8912E; --bar: #1F4B3A; --danger: #8E3324; --on-accent: #F8F7F2;

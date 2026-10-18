@@ -1,4 +1,4 @@
-// src/patterns.js — toutes les regex de Freudiff (spec § 4). Aucune dépendance.
+// src/patterns.js — toutes les regex de CCTI (spec § 4). Aucune dépendance.
 // W() remplace le \b de la spec par des lookarounds Unicode : le \b natif de JS
 // ignore les lettres accentuées (« désolé » ne matcherait pas en fin de mot).
 const W = (src, flags = '') =>

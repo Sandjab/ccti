@@ -1,6 +1,6 @@
 // src/demo.js — stats synthétiques pour « Voir un exemple ». Aucune donnée réelle. Type attendu : AVPN.
 export default {
-  meta: { generatedAt: '2026-10-17T00:00:00.000Z', freudiffVersion: '0.1.0', tz: 'Europe/Paris', lowConfidence: false },
+  meta: { generatedAt: '2026-10-17T00:00:00.000Z', cctiVersion: '0.1.0', tz: 'Europe/Paris', lowConfidence: false },
   volume: {
     sessions: 420, ghostSessions: 61, projects: 23,
     topProjects: [{ name: 'atelier', sessions: 74 }, { name: 'cartes', sessions: 58 }, { name: 'vigie', sessions: 41 }, { name: 'sextant', sessions: 33 }, { name: 'herbier', sessions: 27 }],

@@ -1,4 +1,4 @@
-// tests/e2e/freudiff.spec.js — parcours complet sur les fixtures, sans aucune requête externe.
+// tests/e2e/ccti.spec.js — parcours complet sur les fixtures, sans aucune requête externe.
 import { test, expect } from '@playwright/test';
 import { statSync } from 'node:fs';
 
@@ -20,10 +20,10 @@ test('analyse des fixtures, carte, exports, langue, thème', async ({ page }) =>
   await expect(page.locator('#sections .section')).toHaveCount(7); // 6 + Gaspillage
   await expect(page.locator('#lowconf')).toBeHidden();
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#png')]);
-  expect(download.suggestedFilename()).toBe('freudiff-CLID.png');
+  expect(download.suggestedFilename()).toBe('ccti-CLID.png');
   expect(statSync(await download.path()).size).toBeGreaterThan(10_000);
   const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
-  expect(json.suggestedFilename()).toBe('freudiff-stats.json');
+  expect(json.suggestedFilename()).toBe('ccti-stats.json');
   await page.click('#lang');
   await expect(page.locator('#card svg')).toContainText('The Sniper');
   await expect(page.locator('h2', { hasText: 'The couple' })).toBeVisible();

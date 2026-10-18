@@ -2,10 +2,10 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
-test('dist/freudiff.html en file://', async ({ page }) => {
+test('dist/ccti.html en file://', async ({ page }) => {
   const urls = [];
   page.on('request', (r) => { const p = new URL(r.url()).protocol; if (p !== 'file:' && p !== 'blob:' && p !== 'data:') urls.push(r.url()); });
-  await page.goto('file://' + path.resolve('dist/freudiff.html'));
+  await page.goto('file://' + path.resolve('dist/ccti.html'));
   await page.locator('#fallback').setInputFiles('tests/fixtures/projects');
   await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#card svg')).toContainText('CLID');

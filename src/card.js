@@ -75,8 +75,8 @@ export function renderCard(stats, profile, { lang = 'en', theme = 'light', image
 <rect width="${CARD_W}" height="${CARD_H}" fill="${c.bg}"/>
 <rect x="28" y="28" width="1144" height="844" rx="4" fill="${c.card}" stroke="${c.rule}" stroke-width="2"/>
 <line x1="28" y1="118" x2="1172" y2="118" stroke="${c.rule}" stroke-width="2"/>
-<text x="60" y="84" font-family="${DISPLAY_FONT}" font-size="34" font-weight="700" fill="${c.ink}">FREUDIFF</text>
-<text x="280" y="84" font-size="20" fill="${c.muted}">${esc(t(lang, 'card.subtitle'))}</text>
+<text x="60" y="84" font-family="${DISPLAY_FONT}" font-size="34" font-weight="700" fill="${c.ink}">CCTI</text>
+<text x="172" y="84" font-size="20" fill="${c.muted}">${esc(t(lang, 'card.subtitle'))}</text>
 <text x="1140" y="84" font-size="18" fill="${c.muted}" text-anchor="end">${esc(period)}</text>
 ${image ? `<image href="${esc(image)}" x="60" y="146" width="300" height="300"/>
 <rect x="60" y="146" width="300" height="300" fill="none" stroke="${c.rule}" stroke-width="2"/>` : ''}

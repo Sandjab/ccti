@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 
-const SITE = 'https://sandjab.github.io/freudiff/';
+const SITE = 'https://sandjab.github.io/ccti/';
 const html = readFileSync('index.html', 'utf8');
 const meta = (attr, key) => html.match(new RegExp(`<meta ${attr}="${key}" content="([^"]*)">`))?.[1];
 

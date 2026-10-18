@@ -1,4 +1,4 @@
-// src/analyzer.js — cœur de Freudiff. JavaScript pur, aucune dépendance, aucun DOM.
+// src/analyzer.js — cœur de CCTI. JavaScript pur, aucune dépendance, aucun DOM.
 // Consomme des lignes JSONL de Claude Code et ne conserve que des agrégats (spec § 3-4).
 import {
   cleanText, INTERRUPTED, INTERRUPTED_FOR_TOOL, SLASH_COMMAND,
@@ -8,7 +8,7 @@ import {
 } from './patterns.js';
 import { costUsd, priceFor } from './pricing.js';
 
-export const FREUDIFF_VERSION = '0.1.0';
+export const CCTI_VERSION = '0.1.0';
 const NEEDLES = ['"type":"user"', '"type":"assistant"', '"type":"permission-mode"', '"type":"system"'];
 const KNOWN_MODES = new Set(['default', 'acceptEdits', 'auto', 'bypassPermissions', 'plan', 'dontAsk']);
 const HOUR_MS = 3_600_000;
@@ -293,7 +293,7 @@ export class Analyzer {
     let tz = 'local';
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local'; } catch {}
     return {
-      meta: { generatedAt: new Date().toISOString(), freudiffVersion: FREUDIFF_VERSION, tz, lowConfidence: s.humanMessages < 20 },
+      meta: { generatedAt: new Date().toISOString(), cctiVersion: CCTI_VERSION, tz, lowConfidence: s.humanMessages < 20 },
       volume: {
         sessions: s.sessions, ghostSessions: s.ghostSessions, projects: s.projects.size,
         topProjects: top(s.projects, 10).map(([name, sessions]) => ({ name, sessions })),
