@@ -174,7 +174,7 @@ function start(entries) {
       const run = mergeRuns(prev, d, touched);
       state.items = files; state.entries = examined; state.dups = allDups; state.result = run;
       state.coverage = receipt(examined, files, allDups, run);
-      setReports(run.reports);
+      setReports(run.reports, prev ? { touched, before: prev.reports } : null);
     }
   };
   w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
@@ -184,12 +184,18 @@ function start(entries) {
 function back() { show(state.reports ? 'report' : 'intro'); }
 $('cancel').addEventListener('click', () => { state.scanning = false; if (state.worker) { state.worker.terminate(); state.worker = null; } back(); });
 // Outils affichés : ceux qui ont au moins une session (à défaut, tous) ; le plus fourni d'abord.
-function setReports(reports) {
+// Outil choisi : au premier dépôt, le plus fourni ; après un ajout, l'outil que le lot vient d'apporter,
+// sinon celui déjà affiché (spec issue #2 § 5).
+function setReports(reports, add) {
   state.reports = reports;
-  const withSessions = Object.keys(reports).filter((k) => reports[k].volume.sessions > 0);
+  const has = (r, k) => !!(r && r[k] && r[k].volume.sessions > 0);
+  const withSessions = Object.keys(reports).filter((k) => has(reports, k));
   state.tools = (withSessions.length ? withSessions : Object.keys(reports))
     .sort((a, b) => reports[b].volume.sessions - reports[a].volume.sessions);
-  selectTool(state.tools[0]);
+  let tool = state.tools[0];
+  if (add) tool = state.tools.find((k) => add.touched.has(k) && !has(add.before, k))
+    || (state.tools.includes(state.tool) ? state.tool : tool);
+  selectTool(tool);
   show('report');
 }
 function selectTool(tool) {

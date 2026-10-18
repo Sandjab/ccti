@@ -279,3 +279,18 @@ test('ajouter Claude après Codex : seul Claude est relu', async ({ page }) => {
   expect(coverage.unreadable).toBe(1);
   expect(coverage.codex).toBe(5);
 });
+
+// Issue #2, point 4 : après un ajout, l'outil que le dossier vient d'apporter s'affiche, même s'il a moins
+// de sessions ; réajouter un outil déjà présent ne change pas l'outil affiché.
+test('après un ajout : l\'outil apporté s\'affiche, puis l\'outil affiché reste', async ({ page }) => {
+  await stubPicker(page, CLAUDE, CODEX, grow(CLAUDE));
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#card svg')).toContainText('CLID', { timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions'], { timeout: 30_000 });
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+  await page.click('#add');
+  await expect(page.locator('#coverage')).toContainText('doublons d\'une session déjà lue : 1', { timeout: 30_000 });
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+});
