@@ -1,4 +1,4 @@
-# CCTI — Claude Code Type Indicator
+# CCTI — Claude and Codex Type Indicator
 
 > 🇬🇧 **English** (you are here) · 🇫🇷 [Français](README-fr.md)
 
@@ -6,8 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-sandjab.github.io%2Fccti-1F4B3A)](https://sandjab.github.io/ccti)
 
-> **You and Claude Code in four letters: a 16-type personality test, a pastiche of MBTI (Myers-Briggs Type Indicator).**
-> Drop your `~/.claude/projects` folder on a page. Four measured axes give you one of sixteen
+> **You and Claude Code or Codex in four letters: a 16-type personality test, a pastiche of MBTI (Myers-Briggs Type Indicator).**
+> Drop your `~/.claude/projects` or `~/.codex/sessions` folder on a page (or both: you get one report per tool). Four measured axes give you one of sixteen
 > types, in the spirit of MBTI-style tests. You also get the counters nobody
 > dares to keep, an API-equivalent bill, a diagnosis with teeth, and a card to share.
 > Everything runs in your browser. Nothing is uploaded, ever.
@@ -46,7 +46,7 @@ with a bill at the end because somebody has to say it.
 
 ## The sixteen types
 
-Four axes, two poles each, one letter per axis. CCTI is an independent project, affiliated with neither Anthropic nor The Myers-Briggs Company. Claude is a trademark of Anthropic; MBTI and Myers-Briggs Type Indicator are trademarks of The Myers-Briggs Company.
+Four axes, two poles each, one letter per axis. CCTI is an independent project, affiliated with neither Anthropic, OpenAI nor The Myers-Briggs Company. Claude is a trademark of Anthropic; Codex is a trademark of OpenAI; MBTI and Myers-Briggs Type Indicator are trademarks of The Myers-Briggs Company.
 
 <table>
   <tr><td><img src="assets/types/en/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/en/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/en/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/en/CVIN.webp" alt="CVIN" width="200"></td></tr>
@@ -94,6 +94,8 @@ aggregates only. Tokens are deduplicated per assistant message (Claude Code writ
 content block, with the same usage repeated). Agreement, apology, refusal and interruption markers
 are French and English regular expressions, listed in `src/patterns.js`. Prices come from the
 public API grid in `src/pricing.js`; the bill is an estimate, your subscription does not work that way.
+Codex sessions (`rollout-*.jsonl`) are read by `codex/analyzer.js` and billed at OpenAI's public prices
+(`codex/pricing.js`); compressed `.jsonl.zst` files are counted, not read.
 
 ## Run locally
 
@@ -107,7 +109,7 @@ node scripts/cli.mjs ~/.claude/projects --lang en   # same analysis from the ter
 ```
 
 Hours are computed in your local time zone. Markers are heuristics tuned on French and English
-conversations; other languages will undercount. Claude Code only, for now.
+conversations; other languages will undercount.
 
 ## License
 

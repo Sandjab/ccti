@@ -22,3 +22,12 @@ test("l'image d'aperçu est en URL absolue, existe et est déployée par la CI",
   assert.ok(existsSync(file), `${file} absent du dépôt`);
   assert.match(readFileSync('.github/workflows/ci.yml', 'utf8'), new RegExp(`cp [^\\n]*${file}`), `${file} non copié dans _site`);
 });
+
+// La page couvre deux outils : le titre et l'aperçu de partage doivent le dire.
+test('titre et aperçu citent Claude Code et Codex', () => {
+  const title = html.match(/<title>([^<]*)<\/title>/)[1];
+  for (const s of [title, meta('property', 'og:title'), meta('name', 'description')]) {
+    assert.ok(s.includes('Claude') && s.includes('Codex'), s);
+  }
+  assert.ok(title.includes('Claude and Codex Type Indicator'));
+});

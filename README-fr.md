@@ -1,4 +1,4 @@
-# CCTI — Claude Code Type Indicator
+# CCTI — Claude and Codex Type Indicator
 
 > 🇫🇷 **Français** (vous êtes ici) · 🇬🇧 [English](README.md)
 
@@ -6,8 +6,8 @@
 [![Licence : MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Site](https://img.shields.io/badge/site-sandjab.github.io%2Fccti-1F4B3A)](https://sandjab.github.io/ccti)
 
-> **Votre binôme Claude Code en 4 lettres : un test de personnalité à 16 types, pastiche du MBTI (Myers-Briggs Type Indicator).**
-> Glissez votre dossier `~/.claude/projects` sur une page. Quatre axes mesurés vous classent dans
+> **Votre binôme Claude Code ou Codex en 4 lettres : un test de personnalité à 16 types, pastiche du MBTI (Myers-Briggs Type Indicator).**
+> Glissez votre dossier `~/.claude/projects` ou `~/.codex/sessions` sur une page (ou les deux : un bilan par outil). Quatre axes mesurés vous classent dans
 > l'un des seize types, dans l'esprit des tests à la MBTI. Vous obtenez aussi les compteurs que personne n'ose tenir, une facture en équivalent API, un diagnostic qui a des
 > dents, et une carte à partager. Tout tourne dans votre navigateur. Rien n'est envoyé, jamais.
 
@@ -45,7 +45,7 @@ formez avec Claude Code, avec une facture à la fin parce qu'il faut bien que qu
 
 ## Les seize types
 
-Quatre axes à deux pôles, une lettre par axe. CCTI est un projet indépendant, qui n'est affilié ni à Anthropic ni à The Myers-Briggs Company. Claude est une marque d'Anthropic ; MBTI et Myers-Briggs Type Indicator sont des marques de The Myers-Briggs Company.
+Quatre axes à deux pôles, une lettre par axe. CCTI est un projet indépendant, qui n'est affilié ni à Anthropic, ni à OpenAI, ni à The Myers-Briggs Company. Claude est une marque d'Anthropic ; Codex est une marque d'OpenAI ; MBTI et Myers-Briggs Type Indicator sont des marques de The Myers-Briggs Company.
 
 <table>
   <tr><td><img src="assets/types/fr/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/fr/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/fr/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/fr/CVIN.webp" alt="CVIN" width="200"></td></tr>
@@ -94,7 +94,9 @@ des agrégats. Les tokens sont dédoublonnés par message assistant (Claude Code
 de contenu, avec le même usage répété). Les marqueurs d'accord, d'excuse, de refus et d'interruption
 sont des expressions régulières françaises et anglaises, listées dans `src/patterns.js`. Les prix
 viennent de la grille API publique dans `src/pricing.js` ; la facture est une estimation, votre
-abonnement ne fonctionne pas ainsi.
+abonnement ne fonctionne pas ainsi. Les sessions Codex (`rollout-*.jsonl`) sont lues par
+`codex/analyzer.js` et facturées au tarif public d'OpenAI (`codex/pricing.js`) ; les fichiers
+compressés `.jsonl.zst` sont comptés, pas lus.
 
 ## En local
 
@@ -108,8 +110,7 @@ node scripts/cli.mjs ~/.claude/projects --lang fr   # la même analyse depuis le
 ```
 
 Les heures sont calculées dans votre fuseau. Les marqueurs sont des heuristiques réglées sur des
-conversations en français et en anglais ; les autres langues seront sous-comptées. Claude Code
-uniquement, pour l'instant.
+conversations en français et en anglais ; les autres langues seront sous-comptées.
 
 ## Licence
 

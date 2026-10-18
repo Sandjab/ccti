@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "A 16-type personality test for you and Claude Code, computed locally from your session logs.",
+  "description": "A 16-type personality test for you and Claude Code or Codex, computed locally from your session logs.",
   "license": "MIT",
   "engines": { "node": ">=22" },
   "scripts": {
