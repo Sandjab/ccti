@@ -57,3 +57,15 @@ test('dist/ccti.html : dépôt mixte Claude + Codex en file://', async ({ page }
   await expect(page.locator('#card svg')).toContainText('CLPN');
   expect(urls).toEqual([]);
 });
+
+// spec .zst : le worker Blob du fichier autonome décompresse une vraie archive, sans requête.
+test('dist/ccti.html : une session .jsonl.zst est lue en file://', async ({ page }) => {
+  const urls = [];
+  page.on('request', (r) => { const p = new URL(r.url()).protocol; if (p !== 'file:' && p !== 'blob:' && p !== 'data:') urls.push(r.url()); });
+  await page.goto('file://' + path.resolve('dist/ccti.html'));
+  await page.locator('#fallback').setInputFiles('tests/fixtures-codex-zst');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#card svg')).toContainText('· Codex');
+  await expect(page.locator('#coverage')).toContainText('archives .jsonl.zst décompressées : 1');
+  expect(urls).toEqual([]);
+});

@@ -2,6 +2,7 @@
 // code source de Codex. Aucune donnée réelle. Relancer : npm run fixtures:codex
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { zstdCompressSync, constants } from 'node:zlib';
 
 const usage = (input, cached, output, cacheWrite = 0) => ({ input_tokens: input, cached_input_tokens: cached, cache_write_input_tokens: cacheWrite, output_tokens: output, reasoning_output_tokens: 0, total_tokens: input + output });
 const tokens = (total, last) => ({ type: 'token_count', info: { total_token_usage: total, last_token_usage: last, model_context_window: 258400 }, rate_limits: null });
@@ -90,16 +91,23 @@ const RAW = {
   'tests/fixtures-codex/session_index.jsonl': '{"id":"a1","thread_name":"ignored","updated_at":"2026-10-05"}\n',
   // un .jsonl que ni Claude ni Codex n'écrit : compté « non reconnu » dans le reçu (issue #1)
   'tests/fixtures-codex/notes/other.jsonl': '{"note":"not a session"}\n',
-  'tests/fixtures-codex-zst/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f7.jsonl.zst': 'not really zstd',
 };
 
 await rm('tests/fixtures-codex', { recursive: true, force: true });
 await rm('tests/fixtures-codex-zst', { recursive: true, force: true });
+const texts = {};
 for (const [file, lines] of Object.entries(FILES)) {
   await mkdir(path.dirname(file), { recursive: true });
   const text = lines.map((l, ordinal) => (typeof l === 'string' ? l
     : JSON.stringify({ timestamp: l[0], ordinal, type: l[1], payload: l[2], ...(l[3] ? { metadata: l[3] } : {}) }))).join('\n') + '\n';
+  texts[file] = text;
   await writeFile(file, text);
 }
 for (const [file, text] of Object.entries(RAW)) { await mkdir(path.dirname(file), { recursive: true }); await writeFile(file, text); }
-console.log(`${Object.keys(FILES).length + Object.keys(RAW).length} fichiers écrits`);
+// Une vraie archive zstd (niveau 19), copie de la session A : la page doit la lire (spec .zst § 7).
+const ZST = { 'tests/fixtures-codex-zst/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f7.jsonl.zst': 'tests/fixtures-codex/sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1.jsonl' };
+for (const [file, from] of Object.entries(ZST)) {
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, zstdCompressSync(Buffer.from(texts[from]), { params: { [constants.ZSTD_c_compressionLevel]: 19 } }));
+}
+console.log(`${Object.keys(FILES).length + Object.keys(RAW).length + Object.keys(ZST).length} fichiers écrits`);

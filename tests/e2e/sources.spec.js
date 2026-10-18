@@ -6,7 +6,7 @@ import path from 'node:path';
 
 const read = (root, prefix) => readdirSync(root, { recursive: true })
   .filter((f) => statSync(path.join(root, f)).isFile())
-  .map((f) => ({ rel: prefix + f.split(path.sep).join('/'), text: readFileSync(path.join(root, f), 'utf8') }));
+  .map((f) => ({ rel: prefix + f.split(path.sep).join('/'), b64: readFileSync(path.join(root, f)).toString('base64') })); // en octets : un .zst lu en UTF-8 serait abîmé
 const CLAUDE = read('tests/fixtures/projects', '.claude/projects/');
 const CODEX = read('tests/fixtures-codex', '.codex/');
 const ZST_ONLY = read('tests/fixtures-codex-zst', '.codex/');
@@ -19,17 +19,17 @@ async function stubPicker(page, ...batches) {
     window.showDirectoryPicker = async () => {
       const files = batches[Math.min(call++, batches.length - 1)];
       const tree = { kind: 'directory', name: 'home', children: new Map() };
-      for (const { rel, text } of files) {
+      for (const { rel, b64 } of files) {
         const parts = rel.split('/'); let node = tree;
         for (const p of parts.slice(0, -1)) {
           if (!node.children.has(p)) node.children.set(p, { kind: 'directory', name: p, children: new Map() });
           node = node.children.get(p);
         }
-        node.children.set(parts.at(-1), { kind: 'file', name: parts.at(-1), text });
+        node.children.set(parts.at(-1), { kind: 'file', name: parts.at(-1), b64 });
       }
       let t = 0;
       const wrap = (n) => n.kind === 'file'
-        ? { kind: 'file', name: n.name, getFile: async () => new File([n.text], n.name, { lastModified: 1_700_000_000_000 + (t++) }) }
+        ? { kind: 'file', name: n.name, getFile: async () => new File([Uint8Array.from(atob(n.b64), (c) => c.charCodeAt(0))], n.name, { lastModified: 1_700_000_000_000 + (t++) }) }
         : { kind: 'directory', name: n.name, async *entries() { for (const [k, c] of n.children) yield [k, wrap(c)]; } };
       return wrap(tree);
     };
@@ -51,7 +51,7 @@ test('Codex seul : bilan Codex, pas de sélecteur, exports ccti-codex', async ({
   await expect(page.locator('#card svg')).toContainText('Claude and Codex Type Indicator · Codex');
   await expect(page.locator('#diagnosis')).not.toContainText('Claude');
   await expect(page.locator('#sections')).not.toContainText('Claude');
-  await expect(page.locator('#sections')).toContainText('Sessions compressées ignorées');
+  await expect(page.locator('#sections')).not.toContainText('zstd');
   await expect(page.locator('#sections')).not.toContainText('Bloqués par le mode auto');
   const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
   expect(json.suggestedFilename()).toBe('ccti-codex-stats.json');
@@ -81,13 +81,14 @@ test('dépôt mixte : sélecteur, bascule, langue, exports par outil', async ({ 
   await expect(page.locator('#card svg')).toContainText('· Claude Code');
 });
 
-test('Claude + Codex compressé seulement : pas d\'onglet Codex vide', async ({ page }) => {
+test('Claude + Codex compressé : la session .zst est lue, onglet Codex', async ({ page }) => {
   await stubPicker(page, [...CLAUDE, ...ZST_ONLY]);
   await page.goto('/');
   await page.click('#pick');
-  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator('#tools button')).toHaveCount(0);
-  await expect(page.locator('#card svg')).toContainText('CLID');
+  await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 1 sessions'], { timeout: 30_000 });
+  await page.locator('#tools button').nth(1).click();
+  await expect(page.locator('#card svg')).toContainText('· Codex');
+  await expect(page.locator('#coverage')).toContainText('archives .jsonl.zst décompressées : 1');
 });
 
 test('Ajouter un dossier : Claude puis Codex, et un dossier déjà vu n\'est pas recompté', async ({ page }) => {
@@ -100,6 +101,8 @@ test('Ajouter un dossier : Claude puis Codex, et un dossier déjà vu n\'est pas
   await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions']);
   await page.click('#add');                                     // le même dossier Claude, une seconde fois
   await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions']);
+  await expect(page.locator('#toast')).toContainText('Aucune nouvelle session lisible');
+  await expect(page.locator('#toast')).not.toContainText('zstd');
 });
 
 test('démo : deux bilans, et « Analyser un autre dossier » remet les textes Claude', async ({ page }) => {
@@ -157,16 +160,14 @@ test('annuler pendant « Ajouter un dossier » : retour au bilan affiché', asyn
   await expect(page.locator('#tools button')).toHaveCount(0);
 });
 
-// Revue de branche, Important 3 : un ajout sans session lisible le dit, et le bilan reste.
-test('ajouter un dossier Codex compressé seulement : message, bilan inchangé', async ({ page }) => {
+// spec .zst : un dossier de sessions compressées ajouté après un bilan Claude est lu.
+test('ajouter un dossier Codex compressé seulement : la session est lue', async ({ page }) => {
   await stubPicker(page, CLAUDE, ZST_ONLY);
   await page.goto('/');
   await page.click('#pick');
   await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
   await page.click('#add');
-  await expect(page.locator('#toast')).toContainText('zstd -d');
-  await expect(page.locator('#report')).toBeVisible();
-  await expect(page.locator('#card svg')).toContainText('CLID');
+  await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 1 sessions'], { timeout: 30_000 });
 });
 
 // Issue #1 : reçu de couverture, à l'écran et dans l'export JSON ; la limite au seul appareil est dite.
@@ -178,13 +179,15 @@ test('reçu de couverture : chaque fichier examiné compté, dans la page et dan
   const receipt = page.locator('#coverage');
   await expect(receipt).toContainText('Fichiers examinés : 9');
   await expect(receipt).toContainText('fichiers Codex : 5');
-  await expect(receipt).toContainText('archives .jsonl.zst ignorées : 1');
+  await expect(receipt).toContainText('archives .jsonl.zst décompressées : 0');
+  await expect(receipt).toContainText('archives déjà décompressées : 0');
+  await expect(receipt).toContainText('illisibles : 1');
   await expect(receipt).toContainText('historiques et index : 2');
   await expect(receipt).toContainText('non reconnus : 1');
   await expect(receipt).toContainText('sur cet appareil');
   const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
   const { coverage } = JSON.parse(readFileSync(await json.path(), 'utf8'));
-  expect(coverage).toEqual({ examined: 9, claude: 0, codex: 5, compressed: 1, index: 2, unrecognized: 1, unreadable: 0, corruptLines: 1 });
+  expect(coverage).toEqual({ examined: 9, claude: 0, codex: 5, compressed: 0, duplicates: 0, index: 2, unrecognized: 1, unreadable: 1, corruptLines: 1 });
 });
 
 test('démo : pas de reçu (aucun fichier examiné)', async ({ page }) => {
