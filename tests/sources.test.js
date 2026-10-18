@@ -35,9 +35,9 @@ test('un dossier de jour Codex glissé seul n\'est pas un projet Claude', () => 
   assert.equal(out.length, 2);
 });
 
-test('fichiers compressés seuls : items Codex marqués skip', () => {
+test('fichiers compressés seuls : items Codex marqués zst', () => {
   const out = classify([F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst')]);
-  assert.deepEqual(out.map((o) => [o.tool, o.skip]), [['codex', true]]);
+  assert.deepEqual(out.map((o) => [o.tool, o.zst]), [['codex', true]]);
 });
 
 test('accept : jsonl et jsonl.zst', () => {
@@ -64,10 +64,11 @@ test('ajout : une sauvegarde Claude hors projects/ puis ~/.codex garde les sessi
   assert.equal(second.added, 1);
 });
 
-test('ajout : un dossier Codex compressé seulement n\'ajoute aucune session lisible', () => {
+test('ajout : un dossier Codex compressé seulement ajoute une session lisible', () => {
   const first = addBatch([], [G('projects/-Users-x-Dev-a/s1.jsonl')]);
   const second = addBatch(first.items, [G('.codex/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst')]);
-  assert.equal(second.added, 0);
+  assert.equal(second.added, 1);
+  assert.deepEqual(second.items.map((o) => [o.tool, !!o.zst]), [['claude', false], ['codex', true]]);
 });
 
 // Issue #1 : chaque fichier examiné tombe dans une catégorie comptée, et la somme des catégories
@@ -83,7 +84,7 @@ test('reçu de couverture : sessions, archives, index, non reconnus', () => {
   ];
   const { items } = addBatch([], entries);
   const c = coverage(entries, items);
-  assert.deepEqual(c, { examined: 5, claude: 0, codex: 1, compressed: 1, index: 2, unrecognized: 1 });
+  assert.deepEqual(c, { examined: 5, claude: 0, codex: 1, compressed: 1, duplicates: 0, index: 2, unrecognized: 1 });
   const { examined, ...parts } = c;
   assert.equal(Object.values(parts).reduce((a, b) => a + b, 0), examined);
   assert.ok(Object.values(c).every(Number.isInteger));
@@ -93,5 +94,35 @@ test('reçu : un fichier atteint deux fois n\'est examiné qu\'une fois', () => 
   const e = G('projects/-Users-x-Dev-a/s1.jsonl');
   const entries = [e, G('-Users-x-Dev-a/s1.jsonl', e.file)];
   const { items } = addBatch([], [e]);
-  assert.deepEqual(coverage(entries, items), { examined: 1, claude: 1, codex: 0, compressed: 0, index: 0, unrecognized: 0 });
+  assert.deepEqual(coverage(entries, items), { examined: 1, claude: 1, codex: 0, compressed: 0, duplicates: 0, index: 0, unrecognized: 0 });
+});
+
+// Review Focus 4 : une session sous les deux formes n'est lue qu'une fois, quel que soit l'ordre (spec .zst, décision 5).
+const ID = 'rollout-2026-09-01T10-00-00-f6';
+const PLAIN = G(`.codex/sessions/2026/09/01/${ID}.jsonl`), ARCH = G(`.codex/sessions/2026/09/01/${ID}.jsonl.zst`);
+const sum = ({ examined, ...parts }) => [examined, Object.values(parts).reduce((a, b) => a + b, 0)];
+
+test('doublon dans un même lot : le .jsonl est lu, l\'archive comptée en duplicates', () => {
+  const { items } = addBatch([], [ARCH, PLAIN]);
+  assert.deepEqual(items.map((o) => !!o.zst), [false]);
+  const c = coverage([ARCH, PLAIN], items);
+  assert.equal(c.codex, 1); assert.equal(c.compressed, 0); assert.equal(c.duplicates, 1);
+  const [examined, total] = sum(c); assert.equal(total, examined);
+});
+
+test('doublon par ajout, .jsonl puis archive : rien d\'ajouté', () => {
+  const first = addBatch([], [PLAIN]);
+  const second = addBatch(first.items, [ARCH]);
+  assert.equal(second.added, 0);
+  assert.deepEqual(second.items.map((o) => !!o.zst), [false]);
+  assert.equal(coverage([PLAIN, ARCH], second.items).duplicates, 1);
+});
+
+test('doublon par ajout, archive puis .jsonl : le .jsonl remplace l\'archive', () => {
+  const first = addBatch([], [ARCH]);
+  const second = addBatch(first.items, [PLAIN]);
+  assert.deepEqual(second.items.map((o) => [o.sessionId, !!o.zst]), [[ID, false]]);
+  const c = coverage([ARCH, PLAIN], second.items);
+  assert.equal(c.duplicates, 1); assert.equal(c.compressed, 0);
+  const [examined, total] = sum(c); assert.equal(total, examined);
 });

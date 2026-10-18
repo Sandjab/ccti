@@ -96,7 +96,8 @@ sont des expressions régulières françaises et anglaises, listées dans `src/p
 viennent de la grille API publique dans `src/pricing.js` ; la facture est une estimation, votre
 abonnement ne fonctionne pas ainsi. Les sessions Codex (`rollout-*.jsonl`) sont lues par
 `codex/analyzer.js` et facturées au tarif public d'OpenAI (`codex/pricing.js`) ; les fichiers
-compressés `.jsonl.zst` sont comptés, pas lus.
+compressés `.jsonl.zst` sont décompressés dans le navigateur par [fzstd](https://github.com/101arrowz/fzstd)
+(MIT), embarqué dans `vendor/` ; quand une session existe sous les deux formes, seul le `.jsonl` est lu.
 
 ## En local
 

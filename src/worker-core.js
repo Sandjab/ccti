@@ -52,7 +52,6 @@ export function runWorker(tools) {
     };
     for (const it of items) {
       const a = of(it.tool);
-      if (it.skip) { a.skipFile(it); done++; continue; } // fichier reconnu mais illisible ici (.zst)
       a.beginFile(tools[it.tool].info(it));
       try {
         await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); }, it.zst);

@@ -52,10 +52,7 @@ function outputText(out) {
 export class CodexAnalyzer extends Analyzer {
   constructor() {
     super({ costUsd });
-    this.compressedSkipped = 0;
   }
-
-  skipFile() { this.compressedSkipped++; }
 
   beginFile(info = {}) {
     super.beginFile({ project: '', sessionId: info.sessionId || '', kind: 'main' });
@@ -208,7 +205,6 @@ export class CodexAnalyzer extends Analyzer {
 
   result() {
     const r = super.result();
-    r.volume.compressedSkipped = this.compressedSkipped;
     // mesures que Codex n'enregistre pas, ou propres à la tarification Anthropic (spec CXTI § 4.3)
     Object.assign(r.couple, { questionsAnswered: null, interruptionsForTool: null, autoModeBlocks: null, modelRefusalFallbacks: null });
     r.control.slashCommands = null;

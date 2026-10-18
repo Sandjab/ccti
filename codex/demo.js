@@ -8,7 +8,6 @@ export default {
     toolsByName: { exec_command: 6100, apply_patch: 2700, update_plan: 900, web_search: 400, request_user_input: 60, view_image: 40, other: 800 },
     subagents: 120, subagentTurns: 1200, activeDays: 96, firstDay: '2026-06-02', lastDay: '2026-10-09', longestStreakDays: 11,
     longestSession: { humanMessages: 38, durationMin: 205, project: 'atelier' }, claudeWorkMinutes: 5400, corruptLines: 0, medianCleanLength: 120,
-    compressedSkipped: 0,
   },
   moments: {
     byHour: [14, 9, 6, 4, 2, 1, 5, 12, 30, 62, 70, 66, 40, 48, 66, 72, 70, 60, 45, 30, 26, 70, 52, 40],

@@ -221,12 +221,12 @@ function renderTools() {
   }));
 }
 
-// Reçu de couverture (issue #1) : une catégorie par fichier examiné ; un fichier illisible quitte la
-// catégorie de son outil pour la sienne, et la somme reste le nombre de fichiers examinés.
+// Reçu de couverture (issue #1) : une catégorie par fichier examiné ; un fichier illisible quitte sa
+// catégorie (outil, ou archives .jsonl.zst) pour la sienne, et la somme reste le nombre de fichiers examinés.
 function receipt(entries, items, result) {
   const c = coverage(entries, items), u = result.unreadable || {};
-  c.claude -= u.claude || 0; c.codex -= u.codex || 0;
-  c.unreadable = (u.claude || 0) + (u.codex || 0);
+  for (const [k, n] of Object.entries(u)) c[k] -= n;
+  c.unreadable = Object.values(u).reduce((a, b) => a + b, 0);
   c.corruptLines = Object.values(result.reports).reduce((n, r) => n + r.volume.corruptLines, 0);
   return c;
 }
@@ -235,7 +235,7 @@ function renderCoverage() {
   $('coverage').hidden = !c;
   if (!c) return;
   const sep = state.lang === 'fr' ? '\u00a0: ' : ': ';
-  const parts = [['covClaude', c.claude], ['covCodex', c.codex], ['covCompressed', c.compressed], ['covIndex', c.index], ['covUnrecognized', c.unrecognized], ['covUnreadable', c.unreadable]]
+  const parts = [['covClaude', c.claude], ['covCodex', c.codex], ['covCompressed', c.compressed], ['covDuplicates', c.duplicates], ['covIndex', c.index], ['covUnrecognized', c.unrecognized], ['covUnreadable', c.unreadable]]
     .map(([k, v]) => `${L(k)}${sep}${n(v)}`).join(', ');
   const corrupt = c.corruptLines ? ` ${L('covCorrupt')}${sep}${n(c.corruptLines)}.` : '';
   $('coverage').textContent = `${L('covExamined')}${sep}${n(c.examined)} (${parts}).${corrupt} ${L('covScope')}`;

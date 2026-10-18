@@ -59,7 +59,6 @@ test('sessions et messages humains', () => {
   assert.equal(v.humanMessages, 3);
   assert.equal(v.medianCleanLength, 16);
   assert.equal(v.corruptLines, 1);
-  assert.equal(v.compressedSkipped, 1);
   assert.deepEqual(stats.versions, { first: '0.149.2', last: '0.153.4', count: 3 });
   assert.equal(v.activeDays, 2); assert.equal(v.firstDay, '2026-10-05'); assert.equal(v.lastDay, '2026-10-07');
   assert.deepEqual(v.longestSession, { humanMessages: 2, durationMin: 30, project: 'alpha' });

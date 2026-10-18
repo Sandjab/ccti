@@ -95,7 +95,8 @@ content block, with the same usage repeated). Agreement, apology, refusal and in
 are French and English regular expressions, listed in `src/patterns.js`. Prices come from the
 public API grid in `src/pricing.js`; the bill is an estimate, your subscription does not work that way.
 Codex sessions (`rollout-*.jsonl`) are read by `codex/analyzer.js` and billed at OpenAI's public prices
-(`codex/pricing.js`); compressed `.jsonl.zst` files are counted, not read.
+(`codex/pricing.js`); compressed `.jsonl.zst` files are decompressed in the browser by [fzstd](https://github.com/101arrowz/fzstd)
+(MIT), shipped in `vendor/`; when a session exists both compressed and decompressed, only the `.jsonl` is read.
 
 ## Run locally
 

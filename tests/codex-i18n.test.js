@@ -1,6 +1,7 @@
 // tests/codex-i18n.test.js — textes des bilans Codex (spec CXTI § 3.4 ; spec CCTI Claude+Codex § 5).
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { LANGS, CODEX_LANGS, t, setTool } from '../src/i18n.js';
 
 afterEach(() => setTool('claude'));
@@ -27,7 +28,6 @@ test('setTool choisit le jeu de textes sans modifier les textes Claude', () => {
   setTool('codex');
   assert.equal(t('fr', 'types.ALID.name'), 'Le Joueur de YOLO');
   assert.ok(t('fr', 'observations.apologies').startsWith('Codex'));
-  assert.ok(t('fr', 'labels.compressedSkipped').includes('zstd -d'));
   setTool('claude');
   assert.ok(t('fr', 'observations.apologies').startsWith('Claude'));
   assert.equal(LANGS.fr.ui.title, 'CCTI');
@@ -42,9 +42,14 @@ test('accueil commun aux deux outils', () => {
       assert.ok(drop.includes('~/.claude/projects') && drop.includes('~/.codex/sessions'), `${tool} ${lang}`);
       const foot = t(lang, 'ui.footer');
       assert.ok(foot.includes('Anthropic') && foot.includes('OpenAI') && foot.includes('Myers-Briggs'), `${tool} ${lang}`);
-      assert.ok(t(lang, 'ui.noFiles').includes('zstd -d'));
+      assert.ok(t(lang, 'ui.noFiles').includes('.jsonl.zst'));
       assert.ok(t(lang, 'ui.shareFooter').endsWith('https://sandjab.github.io/ccti'));
       assert.ok(t(lang, 'ui.toolCodex', { n: '3' }).includes('3'));
     }
   }
+});
+
+// spec .zst § 5 : les archives sont lues, plus aucune consigne de décompression à la main.
+test('plus aucune consigne « zstd -d » dans les textes', () => {
+  for (const f of ['src/i18n/fr.js', 'src/i18n/en.js', 'codex/i18n.js']) assert.ok(!readFileSync(f, 'utf8').includes('zstd -d'), f);
 });

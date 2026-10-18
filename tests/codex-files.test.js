@@ -13,12 +13,21 @@ test('~/.codex entier : seuls les rollout-* sont gardés', () => {
     F('.codex/archived_sessions/rollout-2026-09-01T10-00-00-z9.jsonl'),
   ]);
   assert.deepEqual(out.map((o) => o.sessionId), ['rollout-2026-10-05T22-00-00-a1', 'rollout-2026-09-01T10-00-00-z9']);
-  assert.ok(out.every((o) => !o.skip));
+  assert.ok(out.every((o) => !o.zst));
 });
 
-test('les .jsonl.zst sont gardés pour être comptés, marqués skip', () => {
+test('les .jsonl.zst sont gardés pour être décompressés, marqués zst', () => {
   const out = classify([F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst')]);
-  assert.deepEqual(out.map((o) => [o.sessionId, o.skip]), [['rollout-2026-09-01T10-00-00-f6', true]]);
+  assert.deepEqual(out.map((o) => [o.sessionId, o.zst]), [['rollout-2026-09-01T10-00-00-f6', true]]);
+});
+
+// zstd -d garde l'archive : la même session sous les deux formes n'est lue qu'une fois, en .jsonl (spec .zst, décision 5).
+test('même lot : l\'archive d\'une session présente en .jsonl est écartée', () => {
+  const out = classify([
+    F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst'),
+    F('sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl'),
+  ]);
+  assert.deepEqual(out.map((o) => [o.sessionId, !!o.zst]), [['rollout-2026-09-01T10-00-00-f6', false]]);
 });
 
 test('accept : jsonl et jsonl.zst seulement', () => {

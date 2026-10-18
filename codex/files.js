@@ -8,8 +8,10 @@ export function classify(entries) {
     const name = String(rel).split(/[\\/]/).pop() || '';
     if (!name.startsWith('rollout-')) continue;
     if (name.endsWith('.jsonl')) out.push({ file, sessionId: name.slice(0, -6) });
-    // compressé (zstd) : non lu, compté pour le signaler (spec CXTI § 1, décision 7)
-    else if (name.endsWith('.jsonl.zst')) out.push({ file, sessionId: name.slice(0, -10), skip: true });
+    // compressé (zstd) : décompressé en flux par le worker (spec .zst § 4)
+    else if (name.endsWith('.jsonl.zst')) out.push({ file, sessionId: name.slice(0, -10), zst: true });
   }
-  return out;
+  // zstd -d garde l'archive : si le .jsonl de la même session est là, il l'emporte (spec .zst, décision 5).
+  const plain = new Set(out.filter((o) => !o.zst).map((o) => o.sessionId));
+  return out.filter((o) => !(o.zst && plain.has(o.sessionId)));
 }

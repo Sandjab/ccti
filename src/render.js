@@ -96,7 +96,6 @@ export function renderSections(root, stats, lang) {
       [L('longestSession'), t(lang, 'labels.longestSessionValue', { n: fmtInt(lang, v.longestSession.humanMessages), duration: fmtMinutes(lang, v.longestSession.durationMin), project: v.longestSession.project })],
       [L('claudeWork'), fmtMinutes(lang, v.claudeWorkMinutes)],
       v.corruptLines ? [L('corrupt'), fmtInt(lang, v.corruptLines)] : null,
-      v.compressedSkipped ? [L('compressedSkipped'), fmtInt(lang, v.compressedSkipped)] : null,
     ]), h('h3', { text: L('topTools') }), dl(toolRows), h('h3', { text: L('topProjects') }), dl(projRows)),
     section(t(lang, 'sections.moments'),
       h('h3', { text: L('byHour') }),
