@@ -45,3 +45,11 @@ test('fichier compressé : compté côté Codex, non lu', async () => {
   const r = await run([{ tool: 'codex', file: new File(['x'], 'r.jsonl.zst'), sessionId: 'f', skip: true }]);
   assert.equal(r.reports.codex.volume.compressedSkipped, 1);
 });
+
+// Issue #1 : un fichier illisible est compté à part, pas confondu avec une ligne corrompue.
+test('fichier illisible : compté par outil, aucune ligne corrompue inventée', async () => {
+  const broken = { name: 'x.jsonl', stream() { throw new Error('NotReadableError'); } };
+  const r = await run([{ tool: 'claude', file: broken, slug: '-Users-test-Dev-beta', kind: 'main', sessionId: 'x' }]);
+  assert.deepEqual(r.unreadable, { claude: 1 });
+  assert.equal(r.reports.claude.volume.corruptLines, 0);
+});

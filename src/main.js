@@ -4,13 +4,13 @@ import { detectLang, t, fmtInt, setTool } from './i18n.js';
 import { computeProfile } from './profile.js';
 import { renderCard, CARD_W, CARD_H } from './card.js';
 import { renderDiagnosis, renderSections, diagnosisTexts, renderGallery, h } from './render.js';
-import { accept, addBatch } from './sources.js';
+import { accept, addBatch, coverage } from './sources.js';
 import { createWorker } from './worker-factory.js';
 import DEMO_STATS from './demo.js';
 import CODEX_DEMO from '../codex/demo.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], worker: null, demo: false, startedAt: 0 };
+const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], coverage: null, worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
 
@@ -145,6 +145,7 @@ function start(entries) {
   // Les items retenus ne changent qu'à l'arrivée d'un résultat : une analyse annulée ou en erreur
   // ne se mêle pas au dépôt suivant.
   const { items: files, added } = addBatch(state.items, entries);
+  const examined = [...state.entries, ...entries]; // tout fichier .jsonl / .jsonl.zst collecté, pour le reçu (issue #1)
   if (!added) {
     if (state.reports) { show('report'); toast(t(state.lang, 'ui.nothingAdded')); return; } // ajout sans rien de nouveau
     show('intro'); showError(t(state.lang, 'ui.noFiles')); return;
@@ -162,7 +163,7 @@ function start(entries) {
         done: fmtInt(state.lang, d.done), total: fmtInt(state.lang, d.total), mb: fmtInt(state.lang, d.bytes / 1e6),
         sessions: fmtInt(state.lang, d.sessions), sec: Math.round((Date.now() - state.startedAt) / 1000),
       });
-    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; setReports(d.reports); }
+    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; state.entries = examined; state.coverage = receipt(examined, files, d); setReports(d.reports); }
   };
   w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
   w.postMessage({ type: 'start', files });
@@ -186,9 +187,9 @@ function selectTool(tool) {
   state.profile = computeProfile(state.stats);
   renderReport();
 }
-$('demo').addEventListener('click', () => { state.demo = true; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
+$('demo').addEventListener('click', () => { state.demo = true; state.coverage = null; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
 $('again').addEventListener('click', () => {
-  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [] });
+  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [], entries: [], coverage: null });
   state.tool = 'claude'; setTool('claude');
   show('intro');
 });
@@ -198,6 +199,7 @@ function renderReport() {
   $('demo-banner').hidden = !state.demo;
   $('add').hidden = state.demo;
   renderTools();
+  renderCoverage();
   $('lowconf').hidden = !profile.lowConfidence;
   $('lowconf').textContent = t(lang, 'ui.lowConfidence', { n: fmtInt(lang, stats.volume.humanMessages) });
   const n = ++cardRenders;
@@ -217,6 +219,26 @@ function renderTools() {
     b.addEventListener('click', () => selectTool(k));
     return b;
   }));
+}
+
+// Reçu de couverture (issue #1) : une catégorie par fichier examiné ; un fichier illisible quitte la
+// catégorie de son outil pour la sienne, et la somme reste le nombre de fichiers examinés.
+function receipt(entries, items, result) {
+  const c = coverage(entries, items), u = result.unreadable || {};
+  c.claude -= u.claude || 0; c.codex -= u.codex || 0;
+  c.unreadable = (u.claude || 0) + (u.codex || 0);
+  c.corruptLines = Object.values(result.reports).reduce((n, r) => n + r.volume.corruptLines, 0);
+  return c;
+}
+function renderCoverage() {
+  const c = state.coverage, L = (k) => t(state.lang, `ui.${k}`), n = (x) => fmtInt(state.lang, x);
+  $('coverage').hidden = !c;
+  if (!c) return;
+  const sep = state.lang === 'fr' ? '\u00a0: ' : ': ';
+  const parts = [['covClaude', c.claude], ['covCodex', c.codex], ['covCompressed', c.compressed], ['covIndex', c.index], ['covUnrecognized', c.unrecognized], ['covUnreadable', c.unreadable]]
+    .map(([k, v]) => `${L(k)}${sep}${n(v)}`).join(', ');
+  const corrupt = c.corruptLines ? ` ${L('covCorrupt')}${sep}${n(c.corruptLines)}.` : '';
+  $('coverage').textContent = `${L('covExamined')}${sep}${n(c.examined)} (${parts}).${corrupt} ${L('covScope')}`;
 }
 
 // ---------- carte ----------
@@ -310,7 +332,7 @@ $('png-full').addEventListener('click', async () => {
   try { download(`${prefix()}-${state.profile.code}-full.png`, await svgToPng(svg, 2, width, height)); }
   catch { download(`${prefix()}-${state.profile.code}-full.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
-$('json').addEventListener('click', () => download(`${prefix()}-stats.json`, new Blob([JSON.stringify({ stats: state.stats, profile: state.profile }, null, 2)], { type: 'application/json' })));
+$('json').addEventListener('click', () => download(`${prefix()}-stats.json`, new Blob([JSON.stringify({ stats: state.stats, profile: state.profile, coverage: state.coverage }, null, 2)], { type: 'application/json' })));
 $('share').addEventListener('click', async () => {
   // Texte pour LinkedIn : le diagnostic affiché, puis le lien.
   const d = diagnosisTexts(state.profile, state.lang);

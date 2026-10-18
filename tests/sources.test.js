@@ -69,3 +69,29 @@ test('ajout : un dossier Codex compressé seulement n\'ajoute aucune session lis
   const second = addBatch(first.items, [G('.codex/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst')]);
   assert.equal(second.added, 0);
 });
+
+// Issue #1 : chaque fichier examiné tombe dans une catégorie comptée, et la somme des catégories
+// est le nombre de fichiers examinés. Aucun nom ni chemin dans le reçu, seulement des nombres.
+import { coverage } from '../src/sources.js';
+
+test('reçu de couverture : sessions, archives, index, non reconnus', () => {
+  const entries = [
+    G('.codex/sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1.jsonl'),
+    G('.codex/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst'),
+    G('.codex/history.jsonl'), G('.codex/session_index.jsonl'),
+    G('.codex/notes/other.jsonl'),
+  ];
+  const { items } = addBatch([], entries);
+  const c = coverage(entries, items);
+  assert.deepEqual(c, { examined: 5, claude: 0, codex: 1, compressed: 1, index: 2, unrecognized: 1 });
+  const { examined, ...parts } = c;
+  assert.equal(Object.values(parts).reduce((a, b) => a + b, 0), examined);
+  assert.ok(Object.values(c).every(Number.isInteger));
+});
+
+test('reçu : un fichier atteint deux fois n\'est examiné qu\'une fois', () => {
+  const e = G('projects/-Users-x-Dev-a/s1.jsonl');
+  const entries = [e, G('-Users-x-Dev-a/s1.jsonl', e.file)];
+  const { items } = addBatch([], [e]);
+  assert.deepEqual(coverage(entries, items), { examined: 1, claude: 1, codex: 0, compressed: 0, index: 0, unrecognized: 0 });
+});

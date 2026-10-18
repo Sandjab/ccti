@@ -109,7 +109,9 @@ node scripts/cli.mjs ~/.claude/projects --lang en   # same analysis from the ter
 ```
 
 Hours are computed in your local time zone. Markers are heuristics tuned on French and English
-conversations; other languages will undercount.
+conversations; other languages will undercount. Only the files you drop are read, on this device:
+cloud sessions and transcripts Claude Code already deleted (after 30 days by default, `cleanupPeriodDays`)
+are not counted. A coverage receipt in the report says how many files were examined, read, and skipped, and why.
 
 ## License
 

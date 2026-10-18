@@ -110,7 +110,10 @@ node scripts/cli.mjs ~/.claude/projects --lang fr   # la même analyse depuis le
 ```
 
 Les heures sont calculées dans votre fuseau. Les marqueurs sont des heuristiques réglées sur des
-conversations en français et en anglais ; les autres langues seront sous-comptées.
+conversations en français et en anglais ; les autres langues seront sous-comptées. Seuls les fichiers déposés sont lus, sur cet appareil :
+ni les sessions dans le cloud, ni les transcriptions que Claude Code a déjà effacées (après 30 jours par
+défaut, `cleanupPeriodDays`). Un reçu de couverture, dans le bilan, dit combien de fichiers ont été
+examinés, lus, écartés, et pourquoi.
 
 ## Licence
 

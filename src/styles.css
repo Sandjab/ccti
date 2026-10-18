@@ -51,6 +51,7 @@ progress { width: 100%; height: 12px; accent-color: var(--accent); }
 .card svg { width: 100%; height: auto; display: block; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 28px; }
 .tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.coverage, .limits { color: var(--muted); font-size: 0.9em; margin: 0 0 12px; }
 .toast { color: var(--muted); font-size: 0.95rem; }
 .diagnosis { background: var(--surface); border-left: 4px solid var(--accent); padding: 16px 20px; max-width: 90ch; margin: 0 0 28px; display: flow-root; }
 .types { margin-top: 28px; }

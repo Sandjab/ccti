@@ -25,6 +25,7 @@ export function runWorker(tools) {
     if (!e.data || e.data.type !== 'start') return;
     const items = e.data.files;
     const analyzers = new Map();
+    const unreadable = {}; // fichiers illisibles, par outil (issue #1)
     const of = (tool) => { if (!analyzers.has(tool)) analyzers.set(tool, tools[tool].make()); return analyzers.get(tool); };
     let bytes = 0, done = 0, last = 0;
     const progress = (force) => {
@@ -42,7 +43,7 @@ export function runWorker(tools) {
       try {
         await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); });
       } catch {
-        a.s.corruptLines++;            // fichier illisible : on passe au suivant
+        unreadable[it.tool] = (unreadable[it.tool] || 0) + 1; // fichier illisible : compté, puis on passe au suivant
       }
       a.endFile();
       done++;
@@ -51,6 +52,6 @@ export function runWorker(tools) {
     progress(true);
     const reports = {};
     for (const [tool, a] of analyzers) reports[tool] = a.result();
-    self.postMessage({ type: 'result', reports, bytes });
+    self.postMessage({ type: 'result', reports, unreadable, bytes });
   };
 }

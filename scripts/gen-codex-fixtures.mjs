@@ -88,6 +88,8 @@ const RAW = {
   'tests/fixtures-codex/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f6.jsonl.zst': 'not really zstd',
   'tests/fixtures-codex/history.jsonl': '{"session_id":"a1","ts":1,"text":"ignored"}\n',
   'tests/fixtures-codex/session_index.jsonl': '{"id":"a1","thread_name":"ignored","updated_at":"2026-10-05"}\n',
+  // un .jsonl que ni Claude ni Codex n'écrit : compté « non reconnu » dans le reçu (issue #1)
+  'tests/fixtures-codex/notes/other.jsonl': '{"note":"not a session"}\n',
   'tests/fixtures-codex-zst/sessions/2026/09/01/rollout-2026-09-01T10-00-00-f7.jsonl.zst': 'not really zstd',
 };
 

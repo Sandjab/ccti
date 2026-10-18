@@ -168,3 +168,27 @@ test('ajouter un dossier Codex compressé seulement : message, bilan inchangé',
   await expect(page.locator('#report')).toBeVisible();
   await expect(page.locator('#card svg')).toContainText('CLID');
 });
+
+// Issue #1 : reçu de couverture, à l'écran et dans l'export JSON ; la limite au seul appareil est dite.
+test('reçu de couverture : chaque fichier examiné compté, dans la page et dans le JSON', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#intro')).toContainText('cleanupPeriodDays');
+  await page.locator('#fallback').setInputFiles('tests/fixtures-codex');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  const receipt = page.locator('#coverage');
+  await expect(receipt).toContainText('Fichiers examinés : 9');
+  await expect(receipt).toContainText('fichiers Codex : 5');
+  await expect(receipt).toContainText('archives .jsonl.zst ignorées : 1');
+  await expect(receipt).toContainText('historiques et index : 2');
+  await expect(receipt).toContainText('non reconnus : 1');
+  await expect(receipt).toContainText('sur cet appareil');
+  const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
+  const { coverage } = JSON.parse(readFileSync(await json.path(), 'utf8'));
+  expect(coverage).toEqual({ examined: 9, claude: 0, codex: 5, compressed: 1, index: 2, unrecognized: 1, unreadable: 0, corruptLines: 1 });
+});
+
+test('démo : pas de reçu (aucun fichier examiné)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#demo');
+  await expect(page.locator('#coverage')).toBeHidden();
+});

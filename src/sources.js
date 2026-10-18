@@ -35,3 +35,24 @@ export function addBatch(items, entries) {
   }
   return { items: out, added };
 }
+
+// Fichiers d'historique ou d'index connus (Claude Code et Codex) : ce ne sont pas des sessions.
+const INDEX = new Set(['history.jsonl', 'session_index.jsonl']);
+
+// Reçu de couverture (issue #1) : chaque fichier examiné, compté une fois, tombe dans une seule catégorie.
+// Seulement des nombres : aucun nom, chemin ni identifiant.
+export function coverage(entries, items) {
+  const byKey = new Map(items.map((it) => [keyOf(it.file), it]));
+  const seen = new Set();
+  const c = { examined: 0, claude: 0, codex: 0, compressed: 0, index: 0, unrecognized: 0 };
+  for (const { file } of entries) {
+    const k = keyOf(file);
+    if (seen.has(k)) continue;
+    seen.add(k); c.examined++;
+    const it = byKey.get(k);
+    if (it) c[it.skip ? 'compressed' : it.tool]++;
+    else if (INDEX.has(file.name)) c.index++;
+    else c.unrecognized++;
+  }
+  return c;
+}
