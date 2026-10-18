@@ -109,3 +109,20 @@ test('archive tronquée en cours de route : rien de son début n\'entre dans le 
   assert.equal(v.sessions, 0);
   assert.equal(v.ghostSessions, 0);
 });
+
+// Revue de branche, mineur 7 : le CLI zstd écrit une somme de contrôle par défaut, et une archive peut
+// enchaîner plusieurs trames (ici coupées au milieu d'une ligne) ; le bilan reste celui du .jsonl.
+test('archive avec somme de contrôle, et archive à deux trames : même bilan', async () => {
+  const raw = readFileSync(CODEX);
+  const plain = strip((await run([{ tool: 'codex', file: file(CODEX), sessionId: 'a1' }])).reports.codex);
+  const half = raw.length >> 1;
+  const variants = {
+    checksum: zstdCompressSync(raw, { params: { [constants.ZSTD_c_compressionLevel]: 3, [constants.ZSTD_c_checksumFlag]: 1 } }),
+    frames: Buffer.concat([zst(raw.subarray(0, half), 3), zst(raw.subarray(half), 3)]),
+  };
+  for (const [name, z] of Object.entries(variants)) {
+    const r = await run([{ tool: 'codex', file: new File([z], 'a1.jsonl.zst'), sessionId: 'a1', zst: true }]);
+    assert.deepEqual(r.unreadable, {}, name);
+    assert.deepEqual(strip(r.reports.codex), plain, name);
+  }
+});
