@@ -195,3 +195,23 @@ test('mergeRuns : premier dépôt, le nouveau résultat tel quel', () => {
   const next = { reports: { claude: 'C1' }, unreadable: { claude: 1 } };
   assert.deepEqual(mergeRuns(null, next, new Set(['claude'])), { reports: { claude: 'C1' }, unreadable: { claude: 1 } });
 });
+
+// Revue de branche, important 1 : chaque workflow d'une session écrit son propre journal.jsonl ; même nom,
+// même session parente, mais fichiers distincts. L'identité d'un sous-agent tient au chemin sous subagents/.
+test('deux journal.jsonl de workflows d\'une même session : tous deux lus, aucun doublon', () => {
+  const w1 = at('projects/-Users-x-Dev-a/s1/subagents/workflows/wf_1/journal.jsonl', 100, 1);
+  const w2 = at('projects/-Users-x-Dev-a/s1/subagents/workflows/wf_2/journal.jsonl', 200, 2);
+  const { items, dups } = addBatch([], [w1, w2]);
+  assert.equal(items.length, 2);
+  assert.deepEqual(dups, []);
+  assert.equal(coverage([w1, w2], items, dups).duplicates, 0);
+});
+
+// Le chemin sous subagents/ ne dépend pas du dossier déposé : un journal qui a grandi, réajouté depuis le
+// dossier parent, remplace toujours l'ancien.
+test('journal.jsonl de workflow réajouté depuis le dossier parent après avoir grandi : remplacé', () => {
+  const old = at('-Users-x-Dev-a/s1/subagents/workflows/wf_1/journal.jsonl', 100, 1);
+  const grown = at('projects/-Users-x-Dev-a/s1/subagents/workflows/wf_1/journal.jsonl', 200, 2);
+  const second = addBatch(addBatch([], [old]).items, [grown]);
+  assert.deepEqual(second.items.map((o) => o.file), [grown.file]);
+});

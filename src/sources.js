@@ -14,15 +14,19 @@ export function classify(entries) {
     const inProjects = new Set(entries.filter((e) => String(e.rel).split(/[\\/]/).includes('projects')).map((e) => e.file));
     claude = claude.filter((it) => inProjects.has(it.file));
   }
-  return [...claude.map((it) => ({ ...it, tool: 'claude' })), ...codex];
+  // Sous-agent : son chemin sous subagents/ (wf_1/journal.jsonl, wf_2/journal.jsonl…), stable quel que soit le
+  // dossier déposé ; il fait partie de son identité (revue de branche issue #2, important 1).
+  const relOf = new Map(entries.map((e) => [e.file, String(e.rel).split(/[\\/]/)]));
+  const sub = (it) => { const parts = relOf.get(it.file); return parts.slice(parts.lastIndexOf('subagents') + 1).join('/'); };
+  return [...claude.map((it) => ({ ...it, tool: 'claude', ...(it.kind === 'subagent' ? { sub: sub(it) } : {}) })), ...codex];
 }
 
 // Clé d'un fichier : un même fichier atteint par deux chemins (dossier enfant puis parent) n'est compté qu'une fois.
 const keyOf = (f) => `${f.name}:${f.size}:${f.lastModified}`;
 
 // Identité d'un fichier de session, stable quand il grandit (spec issue #2 § 3). Les fichiers de
-// sous-agents Claude partagent le sessionId de leur session parente : leur nom les distingue.
-const identity = (it) => (it.tool === 'codex' ? `codex:${it.sessionId}` : `claude:${it.slug}:${it.kind}:${it.sessionId}:${it.file.name}`);
+// sous-agents Claude partagent le sessionId de leur session parente : leur chemin sous subagents/ les distingue.
+const identity = (it) => (it.tool === 'codex' ? `codex:${it.sessionId}` : `claude:${it.slug}:${it.kind}:${it.sessionId}:${it.sub || it.file.name}`);
 // a vaut-il mieux que b, à identité égale ? Le .jsonl l'emporte sur l'archive, puis le plus récent,
 // puis le plus gros ; à égalité, b (déjà retenu) reste (spec issue #2, décision 2).
 function better(a, b) {

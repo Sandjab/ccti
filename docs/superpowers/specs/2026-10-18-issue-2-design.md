@@ -56,8 +56,10 @@ Son point 6 (`.jsonl.zst`) est livré par le cycle précédent.
 
 - `identity(it)` :
   - Codex : `codex:<sessionId>` (le `sessionId` ne porte pas l'extension) ;
-  - Claude : `claude:<slug>:<kind>:<sessionId>:<file.name>` — les fichiers de sous-agents partagent le
-    `sessionId` de leur session parente, d'où le nom du fichier.
+  - Claude : `claude:<slug>:<kind>:<sessionId>:<fichier>` — les fichiers de sous-agents partagent le
+    `sessionId` de leur session parente. `<fichier>` est le nom du fichier pour une session principale, et
+    pour un sous-agent son chemin sous `subagents/` : chaque workflow écrit son propre `journal.jsonl`
+    (`subagents/workflows/wf_*/journal.jsonl`), le nom seul les confondrait (revue de branche, important 1).
 - `addBatch(items, entries) → { items, added, touched, dups }` :
   - chaque item classé est comparé à l'item retenu de même identité (dans le même lot ou avant) ;
   - le gagnant suit la décision 2 ; le perdant est retiré des items (s'il y était) ou n'y entre pas ;
