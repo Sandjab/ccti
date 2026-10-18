@@ -199,7 +199,7 @@ test('démo : pas de reçu (aucun fichier examiné)', async ({ page }) => {
 });
 
 // Revue de branche, mineur 3 : un ajout qui n'apporte que l'archive d'une session déjà lue ne change pas
-// le bilan, mais le reçu compte ce fichier examiné, en archive déjà décompressée.
+// le bilan, mais le reçu compte ce fichier examiné, en doublon d'une session déjà lue.
 test('ajouter l\'archive d\'une session déjà lue : bilan inchangé, reçu à jour', async ({ page }) => {
   const A1 = 'sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1';
   const dup = [{ rel: `.codex/${A1}.jsonl.zst`, b64: zstdCompressSync(readFileSync(`tests/fixtures-codex/${A1}.jsonl`)).toString('base64') }];
@@ -293,4 +293,5 @@ test('après un ajout : l\'outil apporté s\'affiche, puis l\'outil affiché res
   await page.click('#add');
   await expect(page.locator('#coverage')).toContainText('doublons d\'une session déjà lue : 1', { timeout: 30_000 });
   await expect(page.locator('#card svg')).toContainText('CLPN');
+  await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions']);
 });

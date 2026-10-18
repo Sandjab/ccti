@@ -108,8 +108,8 @@ Unitaires (`tests/sources.test.js`) :
 - Fichier réajouté après avoir grandi (même nom, plus gros, plus récent) : un seul item, le nouveau ;
   l'ancien dans `dups` ; `touched` = son outil ; `added` = 1.
 - Même cas, version plus ancienne réajoutée : rien d'ajouté, elle va dans `dups`.
-- Égalité de date : le plus gros l'emporte ; égalité totale de date et de taille, clés différentes :
-  celui déjà retenu reste.
+- Égalité de date : le plus gros l'emporte. (Égalité totale de nom, de taille et de date : c'est la même
+  clé, donc le même fichier, examiné une fois ; deux fichiers distincts ne peuvent pas être à égalité totale.)
 - Deux fichiers de sous-agents Claude d'une même session : tous deux retenus.
 - Une session Codex présente dans deux dossiers d'un même lot : une seule retenue.
 - Les tests de doublons `.jsonl` / `.jsonl.zst` existants passent à `coverage(entries, items, dups)`.

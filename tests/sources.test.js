@@ -154,7 +154,9 @@ test('version plus ancienne réajoutée : rien d\'ajouté, elle compte en doublo
   assert.equal(coverage([grown, old], second.items, second.dups).duplicates, 1);
 });
 
-test('même date : la plus grosse version l\'emporte ; égalité totale : la version déjà retenue reste', () => {
+// Même nom, même taille et même date : c'est la même clé, donc le même fichier ; une égalité totale entre deux
+// fichiers distincts de même identité ne peut pas se produire (le nom fait partie de l'identité ou de la clé).
+test('même date : la plus grosse version l\'emporte ; même nom, taille et date : un seul fichier', () => {
   const small = at(S1, 10, 5), big = at(S1, 20, 5);
   assert.equal(addBatch(addBatch([], [small]).items, [big]).items[0].file, big.file);
   const a = at(S1, 10, 5), b = at(S1, 10, 5);

@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 // Fichier autonome ouvert en local : les illustrations n'y sont pas. On ne les demande pas, pour ne pas
 // remplir la console d'erreurs (spec issue #2 § 6).
 const OFFLINE = location.protocol === 'file:';
-const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], dups: [], coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
+const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], dups: new Set(), coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
 
@@ -149,7 +149,7 @@ function start(entries) {
   // ne se mêle pas au dépôt suivant.
   const { items: files, added, touched, dups } = addBatch(state.items, entries);
   const examined = [...state.entries, ...entries]; // tout fichier .jsonl / .jsonl.zst collecté, pour le reçu (issue #1)
-  const allDups = [...state.dups, ...dups];
+  const allDups = new Set([...state.dups, ...dups]); // ensemble : un fichier réajouté n'y entre qu'une fois
   if (!added) {
     if (state.reports) { // ajout sans rien de nouveau : bilan inchangé, mais le reçu compte les fichiers de ce lot
       if (state.result) { state.entries = examined; state.dups = allDups; state.coverage = receipt(examined, state.items, allDups, state.result); renderCoverage(); }
@@ -211,7 +211,7 @@ function selectTool(tool) {
 }
 $('demo').addEventListener('click', () => { state.demo = true; state.coverage = null; state.result = null; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
 $('again').addEventListener('click', () => {
-  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [], entries: [], dups: [], coverage: null, result: null });
+  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [], entries: [], dups: new Set(), coverage: null, result: null });
   state.tool = 'claude'; setTool('claude');
   show('intro');
 });
