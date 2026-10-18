@@ -10,6 +10,9 @@ import DEMO_STATS from './demo.js';
 import CODEX_DEMO from '../codex/demo.js';
 
 const $ = (id) => document.getElementById(id);
+// Fichier autonome ouvert en local : les illustrations n'y sont pas. On ne les demande pas, pour ne pas
+// remplir la console d'erreurs (spec issue #2 § 6).
+const OFFLINE = location.protocol === 'file:';
 const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], dups: [], coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
@@ -27,11 +30,12 @@ function applyI18n() {
   let tz = 'local';
   try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local'; } catch {}
   $('footer-text').textContent = t(state.lang, 'ui.footer', { tz });
-  renderGallery($('types-gallery'), state.lang);
+  if (!OFFLINE) renderGallery($('types-gallery'), state.lang);
   if (state.stats) renderReport();
 }
 // Fichier hors ligne : les illustrations n'y sont pas, la galerie disparaît au premier échec.
 $('types-gallery').addEventListener('ccti:missing', () => { $('types').hidden = true; });
+if (OFFLINE) $('types').hidden = true;
 $('lang').addEventListener('click', () => {
   state.lang = state.lang === 'fr' ? 'en' : 'fr';
   try { localStorage.setItem('ccti.lang', state.lang); } catch {}
@@ -266,6 +270,7 @@ function renderCoverage() {
 // aucune ressource externe. Absente du fichier hors ligne : la carte s'affiche sans elle.
 const illustrations = new Map();
 function illustration(lang, code) {
+  if (OFFLINE) return Promise.resolve(null);
   const key = `${lang}/${code}`;
   if (!illustrations.has(key)) {
     illustrations.set(key, fetch(`assets/types/${key}.webp`)

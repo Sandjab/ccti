@@ -69,3 +69,16 @@ test('dist/ccti.html : une session .jsonl.zst est lue en file://', async ({ page
   await expect(page.locator('#coverage')).toContainText('archives .jsonl.zst décompressées : 1');
   expect(urls).toEqual([]);
 });
+
+// Issue #2, point 5 : en file://, les illustrations absentes ne sont pas demandées, la console reste vide.
+test('dist/ccti.html en file:// : aucune erreur de console, galerie masquée', async ({ page }) => {
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('file://' + path.resolve('dist/ccti.html'));
+  await expect(page.locator('#types')).toBeHidden();
+  await page.locator('#fallback').setInputFiles('tests/fixtures/projects');
+  await expect(page.locator('#card svg')).toContainText('CLID', { timeout: 30_000 });
+  await page.waitForTimeout(500); // laisse arriver d'éventuels échecs de chargement tardifs
+  expect(errors).toEqual([]);
+});
