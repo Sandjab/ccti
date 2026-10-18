@@ -10,7 +10,7 @@ import DEMO_STATS from './demo.js';
 import CODEX_DEMO from '../codex/demo.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], coverage: null, worker: null, demo: false, startedAt: 0 };
+const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
 
@@ -147,7 +147,10 @@ function start(entries) {
   const { items: files, added } = addBatch(state.items, entries);
   const examined = [...state.entries, ...entries]; // tout fichier .jsonl / .jsonl.zst collecté, pour le reçu (issue #1)
   if (!added) {
-    if (state.reports) { show('report'); toast(t(state.lang, 'ui.nothingAdded')); return; } // ajout sans rien de nouveau
+    if (state.reports) { // ajout sans rien de nouveau : bilan inchangé, mais le reçu compte les fichiers de ce lot
+      if (state.result) { state.entries = examined; state.coverage = receipt(examined, state.items, state.result); renderCoverage(); }
+      show('report'); toast(t(state.lang, 'ui.nothingAdded')); return;
+    }
     show('intro'); showError(t(state.lang, 'ui.noFiles')); return;
   }
   state.demo = false; state.startedAt = Date.now();
@@ -163,7 +166,7 @@ function start(entries) {
         done: fmtInt(state.lang, d.done), total: fmtInt(state.lang, d.total), mb: fmtInt(state.lang, d.bytes / 1e6),
         sessions: fmtInt(state.lang, d.sessions), sec: Math.round((Date.now() - state.startedAt) / 1000),
       });
-    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; state.entries = examined; state.coverage = receipt(examined, files, d); setReports(d.reports); }
+    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; state.entries = examined; state.result = d; state.coverage = receipt(examined, files, d); setReports(d.reports); }
   };
   w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
   w.postMessage({ type: 'start', files });
@@ -187,9 +190,9 @@ function selectTool(tool) {
   state.profile = computeProfile(state.stats);
   renderReport();
 }
-$('demo').addEventListener('click', () => { state.demo = true; state.coverage = null; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
+$('demo').addEventListener('click', () => { state.demo = true; state.coverage = null; state.result = null; setReports({ claude: DEMO_STATS, codex: CODEX_DEMO }); });
 $('again').addEventListener('click', () => {
-  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [], entries: [], coverage: null });
+  Object.assign(state, { reports: null, tools: [], stats: null, profile: null, demo: false, items: [], entries: [], coverage: null, result: null });
   state.tool = 'claude'; setTool('claude');
   show('intro');
 });

@@ -3,6 +3,7 @@
 import { test, expect } from '@playwright/test';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { zstdCompressSync } from 'node:zlib';
 
 const read = (root, prefix) => readdirSync(root, { recursive: true })
   .filter((f) => statSync(path.join(root, f)).isFile())
@@ -194,4 +195,21 @@ test('démo : pas de reçu (aucun fichier examiné)', async ({ page }) => {
   await page.goto('/');
   await page.click('#demo');
   await expect(page.locator('#coverage')).toBeHidden();
+});
+
+// Revue de branche, mineur 3 : un ajout qui n'apporte que l'archive d'une session déjà lue ne change pas
+// le bilan, mais le reçu compte ce fichier examiné, en archive déjà décompressée.
+test('ajouter l\'archive d\'une session déjà lue : bilan inchangé, reçu à jour', async ({ page }) => {
+  const A1 = 'sessions/2026/10/05/rollout-2026-10-05T22-00-00-a1';
+  const dup = [{ rel: `.codex/${A1}.jsonl.zst`, b64: zstdCompressSync(readFileSync(`tests/fixtures-codex/${A1}.jsonl`)).toString('base64') }];
+  await stubPicker(page, CODEX, dup);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#coverage')).toContainText('Fichiers examinés : 9');
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('Aucune nouvelle session lisible');
+  await expect(page.locator('#coverage')).toContainText('Fichiers examinés : 10');
+  await expect(page.locator('#coverage')).toContainText('archives déjà décompressées : 1');
+  await expect(page.locator('#card svg')).toContainText('CLPN');
 });
