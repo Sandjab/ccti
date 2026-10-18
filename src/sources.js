@@ -26,14 +26,20 @@ const keyOf = (f) => `${f.name}:${f.size}:${f.lastModified}`;
 // added = nombre de fichiers nouveaux retenus (hors doublons).
 export function addBatch(items, entries) {
   const seen = new Set(items.map((it) => keyOf(it.file)));
+  const codex = new Map(items.filter((it) => it.tool === 'codex').map((it) => [it.sessionId, it])); // sessionId → item retenu
   let out = [...items];
   let added = 0;
   for (const it of classify(entries)) {
     const k = keyOf(it.file);
     if (seen.has(k)) continue;
-    const twin = it.tool === 'codex' && out.find((o) => o.tool === 'codex' && o.sessionId === it.sessionId && !o.zst !== !it.zst);
-    if (twin && it.zst) continue;                          // archive d'une session déjà lue en .jsonl
-    if (twin) out = out.filter((o) => o !== twin);         // le .jsonl remplace l'archive retenue plus tôt
+    if (it.tool === 'codex') {
+      const twin = codex.get(it.sessionId);
+      if (twin && !twin.zst !== !it.zst) {
+        if (it.zst) continue;                              // archive d'une session déjà lue en .jsonl
+        out = out.filter((o) => o !== twin);               // le .jsonl remplace l'archive retenue plus tôt
+      }
+      codex.set(it.sessionId, it);
+    }
     seen.add(k); out.push(it);
     added++;
   }
