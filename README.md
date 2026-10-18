@@ -20,7 +20,7 @@
 **Try it: [sandjab.github.io/ccti](https://sandjab.github.io/ccti)** — or download the
 [offline version](https://sandjab.github.io/ccti/ccti.html), a single HTML file.
 
-<img src="assets/demo.gif" alt="Demo: the 16 types gallery, then the example report and its card" width="100%">
+<img src="assets/demo.gif" alt="Demo: the 16 types gallery, then the example card for Claude Code, then for Codex" width="100%">
 
 ## Why
 

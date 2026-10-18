@@ -19,7 +19,7 @@
 **Essayez : [sandjab.github.io/ccti](https://sandjab.github.io/ccti)**, ou téléchargez la
 [version hors ligne](https://sandjab.github.io/ccti/ccti.html), un seul fichier HTML.
 
-<img src="assets/demo.gif" alt="Démo : la galerie des 16 types, puis le bilan d'exemple et sa carte" width="100%">
+<img src="assets/demo.gif" alt="Démo : la galerie des 16 types, puis la carte d'exemple pour Claude Code, puis pour Codex" width="100%">
 
 ## Pourquoi
 
