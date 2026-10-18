@@ -10,7 +10,8 @@ export function analyzeDir(dir) {
   const rels = readdirSync(dir, { recursive: true }).map((f) => f.split(path.sep).join('/')).sort();
   const a = new CodexAnalyzer();
   for (const it of classify(rels.map((rel) => ({ file: path.join(dir, rel), rel })))) {
-    // comme le worker : une archive est décompressée ; illisible, elle n'apporte rien au parseur
+    // comme le worker : une archive est décompressée, et n'apporte rien si elle est illisible. Un .jsonl
+    // illisible, que le worker compte en session fantôme, n'arrive pas ici : les fixtures sont sur disque.
     let text;
     try { const raw = readFileSync(it.file); text = new TextDecoder().decode(it.zst ? decompress(raw) : raw); } catch { continue; }
     a.beginFile({ sessionId: it.sessionId });

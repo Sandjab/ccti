@@ -96,3 +96,16 @@ test('.zst vide : lu, aucune ligne, pas illisible', async () => {
   assert.deepEqual(r.unreadable, {});
   assert.equal(r.reports.codex.volume.sessions, 0);
 });
+
+// Revue de branche, mineur 1 : une archive coupée en route (copie interrompue) n'apporte rien au bilan,
+// ni le début de session déjà décompressé, ni une session fantôme ; elle est seulement comptée illisible.
+test('archive tronquée en cours de route : rien de son début n\'entre dans le bilan', async () => {
+  const noise = Array.from({ length: 6000 }, (_, i) => JSON.stringify({ type: 'bruit', i, s: randomBytes(96).toString('hex') })).join('\n') + '\n';
+  const z = zst(Buffer.concat([readFileSync(CODEX), Buffer.from(noise)]), 3);
+  const r = await run([{ tool: 'codex', file: new File([z.subarray(0, Math.floor(z.length * 0.6))], 'a1.jsonl.zst'), sessionId: 'a1', zst: true }]);
+  assert.deepEqual(r.unreadable, { compressed: 1 });
+  const v = r.reports.codex.volume;
+  assert.equal(v.humanMessages, 0);
+  assert.equal(v.sessions, 0);
+  assert.equal(v.ghostSessions, 0);
+});

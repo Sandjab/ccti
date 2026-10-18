@@ -13,6 +13,18 @@ function unzstd() {
   });
 }
 
+// Une archive est d'abord décompressée à vide, jusqu'au bout : tronquée ou fausse, elle est écartée avant
+// toute lecture, sans laisser dans le bilan le début déjà décompressé (revue de branche, mineur 1).
+async function intact(file) {
+  try {
+    const reader = file.stream().pipeThrough(unzstd()).getReader();
+    while (!(await reader.read()).done);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function readLines(file, onLine, onBytes, zst) {
   const bytes = zst ? file.stream().pipeThrough(unzstd()) : file.stream();
   const reader = bytes.pipeThrough(new TextDecoderStream()).getReader();
@@ -50,14 +62,15 @@ export function runWorker(tools) {
       for (const a of analyzers.values()) sessions += a.s.sessions;
       self.postMessage({ type: 'progress', done, total: items.length, bytes, sessions });
     };
+    const unread = (it) => { const k = it.zst ? 'compressed' : it.tool; unreadable[k] = (unreadable[k] || 0) + 1; }; // catégorie du reçu (spec .zst § 4)
     for (const it of items) {
       const a = of(it.tool);
+      if (it.zst && !(await intact(it.file))) { unread(it); done++; progress(false); continue; }
       a.beginFile(tools[it.tool].info(it));
       try {
         await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); }, it.zst);
       } catch {
-        const k = it.zst ? 'compressed' : it.tool; // catégorie du reçu (spec .zst § 4)
-        unreadable[k] = (unreadable[k] || 0) + 1; // fichier illisible : compté, puis on passe au suivant
+        unread(it); // fichier illisible : compté, puis on passe au suivant
       }
       a.endFile();
       done++;
