@@ -1,7 +1,21 @@
 // src/worker-core.js — boucle du Web Worker : lecture en streaming, un analyseur par outil,
 // progression (spec § 7.1 ; spec CCTI Claude+Codex § 3).
-async function readLines(file, onLine, onBytes) {
-  const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
+import { Decompress } from '../vendor/fzstd.js';
+
+// Flux zstd → octets décompressés (spec .zst § 3). fzstd lève une erreur sur un flux faux ou tronqué ;
+// elle remonte jusqu'au try/catch de runWorker, qui compte le fichier illisible.
+function unzstd() {
+  let d;
+  return new TransformStream({
+    start(ctl) { d = new Decompress((chunk) => { if (chunk.length) ctl.enqueue(chunk); }); },
+    transform(chunk) { d.push(chunk); },
+    flush() { d.push(new Uint8Array(0), true); },
+  });
+}
+
+async function readLines(file, onLine, onBytes, zst) {
+  const bytes = zst ? file.stream().pipeThrough(unzstd()) : file.stream();
+  const reader = bytes.pipeThrough(new TextDecoderStream()).getReader();
   let rest = '';
   for (;;) {
     const { value, done } = await reader.read();
@@ -25,7 +39,7 @@ export function runWorker(tools) {
     if (!e.data || e.data.type !== 'start') return;
     const items = e.data.files;
     const analyzers = new Map();
-    const unreadable = {}; // fichiers illisibles, par outil (issue #1)
+    const unreadable = {}; // fichiers illisibles, par catégorie du reçu (issue #1)
     const of = (tool) => { if (!analyzers.has(tool)) analyzers.set(tool, tools[tool].make()); return analyzers.get(tool); };
     let bytes = 0, done = 0, last = 0;
     const progress = (force) => {
@@ -41,9 +55,10 @@ export function runWorker(tools) {
       if (it.skip) { a.skipFile(it); done++; continue; } // fichier reconnu mais illisible ici (.zst)
       a.beginFile(tools[it.tool].info(it));
       try {
-        await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); });
+        await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); }, it.zst);
       } catch {
-        unreadable[it.tool] = (unreadable[it.tool] || 0) + 1; // fichier illisible : compté, puis on passe au suivant
+        const k = it.zst ? 'compressed' : it.tool; // catégorie du reçu (spec .zst § 4)
+        unreadable[k] = (unreadable[k] || 0) + 1; // fichier illisible : compté, puis on passe au suivant
       }
       a.endFile();
       done++;

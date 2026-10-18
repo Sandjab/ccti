@@ -4,6 +4,8 @@ process.env.TZ = 'Europe/Paris';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { zstdCompressSync, constants } from 'node:zlib';
 import { Analyzer, projectFromSlug } from '../src/analyzer.js';
 import { CodexAnalyzer } from '../codex/analyzer.js';
 
@@ -52,4 +54,50 @@ test('fichier illisible : compté par outil, aucune ligne corrompue inventée', 
   const r = await run([{ tool: 'claude', file: broken, slug: '-Users-test-Dev-beta', kind: 'main', sessionId: 'x' }]);
   assert.deepEqual(r.unreadable, { claude: 1 });
   assert.equal(r.reports.claude.volume.corruptLines, 0);
+});
+
+// spec .zst : une session compressée donne exactement le bilan du .jsonl d'origine.
+const zst = (buf, level) => zstdCompressSync(buf, { params: { [constants.ZSTD_c_compressionLevel]: level } });
+const strip = ({ meta, ...rest }) => rest; // meta.generatedAt change à chaque bilan
+
+test('session .zst : même bilan que le .jsonl d\'origine (niveaux 3 et 19)', async () => {
+  const raw = readFileSync(CODEX);
+  const plain = strip((await run([{ tool: 'codex', file: file(CODEX), sessionId: 'a1' }])).reports.codex);
+  for (const level of [3, 19]) {
+    const r = await run([{ tool: 'codex', file: new File([zst(raw, level)], 'a1.jsonl.zst'), sessionId: 'a1', zst: true }]);
+    assert.deepEqual(r.unreadable, {});
+    assert.deepEqual(strip(r.reports.codex), plain, `niveau ${level}`);
+  }
+});
+
+// Review Focus 1 : des lignes et des caractères accentués coupés entre blocs, côté compressé et décompressé.
+test('gros .zst : lignes recollées entre blocs, même bilan', async () => {
+  const noise = Array.from({ length: 6000 }, (_, i) => JSON.stringify({ type: 'bruit', i, s: 'é' + randomBytes(96).toString('hex') })).join('\n') + '\n';
+  const raw = Buffer.concat([Buffer.from(noise), readFileSync(CODEX), Buffer.from(noise)]);
+  const z = zst(raw, 3);
+  assert.ok(z.length > 3 * 65536, 'le flux compressé doit arriver en plusieurs blocs');
+  const plain = strip((await run([{ tool: 'codex', file: new File([raw], 'a1.jsonl'), sessionId: 'a1' }])).reports.codex);
+  const r = await run([{ tool: 'codex', file: new File([z], 'a1.jsonl.zst'), sessionId: 'a1', zst: true }]);
+  assert.deepEqual(strip(r.reports.codex), plain);
+  assert.equal(r.reports.codex.volume.humanMessages, 2);
+});
+
+// Review Focus 2 : un .zst tronqué ou faux est compté parmi les archives illisibles, la suite est lue.
+test('.zst tronqué ou faux : illisible, compté dans compressed, les autres fichiers sont lus', async () => {
+  const z = zst(readFileSync(CODEX), 19);
+  const r = await run([
+    { tool: 'codex', file: new File([z.subarray(0, 20)], 't.jsonl.zst'), sessionId: 't', zst: true },
+    { tool: 'codex', file: new File(['not really zstd'], 'f.jsonl.zst'), sessionId: 'f', zst: true },
+    { tool: 'codex', file: file(CODEX), sessionId: 'a1' },
+  ]);
+  assert.deepEqual(r.unreadable, { compressed: 2 });
+  assert.equal(r.reports.codex.volume.sessions, 1);
+  assert.equal(r.reports.codex.volume.corruptLines, 0);
+});
+
+// Review Focus 3 : un .zst vide se lit comme un .jsonl vide.
+test('.zst vide : lu, aucune ligne, pas illisible', async () => {
+  const r = await run([{ tool: 'codex', file: new File([], 'e.jsonl.zst'), sessionId: 'e', zst: true }]);
+  assert.deepEqual(r.unreadable, {});
+  assert.equal(r.reports.codex.volume.sessions, 0);
 });
