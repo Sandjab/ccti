@@ -1,4 +1,4 @@
-// tests/codex-demo.test.js — la démo CXTI est cohérente avec ses propres règles (type, sommes, facture).
+// tests/codex-demo.test.js — la démo Codex est cohérente avec ses propres règles (type, sommes, facture).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import DEMO from '../codex/demo.js';
@@ -7,7 +7,7 @@ import { renderCard } from '../src/card.js';
 import { costUsd } from '../codex/pricing.js';
 import { setTool } from '../src/i18n.js';
 
-test('la démo CXTI donne ALID, des sommes justes et une facture aux prix OpenAI', () => {
+test('la démo Codex donne ALID, des sommes justes et une facture aux prix OpenAI', () => {
   const p = computeProfile(DEMO);
   assert.equal(p.code, 'ALID');
   assert.deepEqual(p.observations.map((o) => o.id), ['apologies', 'no_gt_thanks', 'caps', 'swear', 'ragequit']);

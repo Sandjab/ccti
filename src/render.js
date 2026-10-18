@@ -1,10 +1,6 @@
 // src/render.js — DOM du bilan (spec § 2, état 3). Une seule teinte pour les barres (skill dataviz).
 import { t, fmtInt, fmtPct, fmtUsd, fmtN, fmtDay, fmtMinutes } from './i18n.js';
 
-// Préfixe des illustrations : '' pour CCTI, '../' pour la page CXTI servie depuis codex/.
-let assetBase = '';
-export function setAssetBase(base) { assetBase = base; }
-
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -36,7 +32,7 @@ export function diagnosisTexts(profile, lang) {
 export function typeImage(code, lang, attrs = {}) {
   const img = h('img', { alt: `${t(lang, `types.${code}.name`)} (${code})`, width: 800, height: 800, decoding: 'async', ...attrs });
   img.addEventListener('error', () => { img.style.display = 'none'; img.dispatchEvent(new Event('ccti:missing', { bubbles: true })); });
-  img.src = `${assetBase}assets/types/${lang}/${code}.webp`;
+  img.src = `assets/types/${lang}/${code}.webp`;
   return img;
 }
 

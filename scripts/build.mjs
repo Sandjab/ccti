@@ -3,12 +3,12 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const SHARED = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/profile.js', 'src/i18n/fr.js', 'src/i18n/en.js',
-  'codex/i18n.js', 'src/i18n.js', 'src/card.js', 'src/render.js', 'src/app.js'];
+  'codex/i18n.js', 'src/i18n.js', 'src/card.js', 'src/render.js'];
 // Ordre : chaque module après ceux qu'il importe.
 const TARGETS = [
   { html: 'index.html', out: 'dist/ccti.html', css: 'src/styles.css', script: 'src/main.js',
-    modules: [...SHARED, 'src/files.js', 'src/demo.js', 'src/worker-factory.js', 'src/main.js'],
-    worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/worker-core.js', 'src/worker.js'] },
+    modules: [...SHARED, 'src/files.js', 'codex/files.js', 'src/sources.js', 'src/demo.js', 'codex/demo.js', 'src/worker-factory.js', 'src/main.js'],
+    worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'codex/pricing.js', 'codex/analyzer.js', 'src/worker-core.js', 'src/worker.js'] },
 ];
 
 const modName = (p) => '__m_' + p.replace(/^src\//, '').replace(/\.js$/, '').replace(/[^a-zA-Z0-9]/g, '_');

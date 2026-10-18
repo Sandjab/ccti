@@ -1,4 +1,4 @@
-// codex/demo.js — stats synthétiques pour « Voir un exemple » sur la page CXTI. Aucune donnée réelle. Type attendu : ALID.
+// codex/demo.js — stats synthétiques pour l'onglet Codex de « Voir un exemple ». Aucune donnée réelle. Type attendu : ALID.
 export default {
   meta: { generatedAt: '2026-10-18T00:00:00.000Z', cctiVersion: '0.1.0', tz: 'Europe/Paris', lowConfidence: false },
   volume: {

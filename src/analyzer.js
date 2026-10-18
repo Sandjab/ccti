@@ -50,7 +50,7 @@ const top = (map, n) => [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 
 
 export class Analyzer {
   constructor(opts = {}) {
-    // grille de prix : celle d'Anthropic par défaut ; CXTI passe celle d'OpenAI (spec CXTI § 4.4)
+    // grille de prix : celle d'Anthropic par défaut ; Codex passe celle d'OpenAI (spec CXTI § 4.4)
     this.costUsd = opts.costUsd || costUsd;
     this.s = {
       sessions: 0, ghostSessions: 0, projects: new Map(), humanMessages: 0, assistantTurns: 0,

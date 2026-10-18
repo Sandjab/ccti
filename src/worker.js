@@ -1,5 +1,9 @@
-// src/worker.js — Web Worker CCTI : la boucle commune avec l'analyseur Claude Code (spec § 7.1).
+// src/worker.js — Web Worker : un analyseur par outil, Claude Code ou Codex (spec § 7.1 ; spec CCTI Claude+Codex § 3).
 import { Analyzer, projectFromSlug } from './analyzer.js';
+import { CodexAnalyzer } from '../codex/analyzer.js';
 import { runWorker } from './worker-core.js';
 
-runWorker(() => new Analyzer(), (it) => ({ project: projectFromSlug(it.slug), kind: it.kind, sessionId: it.sessionId }));
+runWorker({
+  claude: { make: () => new Analyzer(), info: (it) => ({ project: projectFromSlug(it.slug), kind: it.kind, sessionId: it.sessionId }) },
+  codex: { make: () => new CodexAnalyzer(), info: (it) => ({ sessionId: it.sessionId }) },
+});

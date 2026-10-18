@@ -1,4 +1,4 @@
-// tests/codex-privacy.test.js — le JSON exporté par CXTI ne contient ni texte de conversation ni chemin
+// tests/codex-privacy.test.js — le JSON exporté d'un bilan Codex ne contient ni texte de conversation ni chemin
 // (spec CXTI § 5, même règle que tests/privacy.test.js).
 process.env.TZ = 'Europe/Paris';
 import { test } from 'node:test';

@@ -1,5 +1,5 @@
-// src/worker-core.js — boucle du Web Worker, commune à CCTI et CXTI : lecture en streaming,
-// analyseur, progression (spec § 7.1 ; spec CXTI § 3.3).
+// src/worker-core.js — boucle du Web Worker : lecture en streaming, un analyseur par outil,
+// progression (spec § 7.1 ; spec CCTI Claude+Codex § 3).
 async function readLines(file, onLine, onBytes) {
   const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
   let rest = '';
@@ -18,21 +18,27 @@ async function readLines(file, onLine, onBytes) {
   if (rest) onLine(rest);
 }
 
-export function runWorker(makeAnalyzer, fileInfo) {
+// tools : { claude: { make, info }, codex: { make, info } } — un analyseur par outil présent dans le dépôt,
+// créé au premier fichier de cet outil ; le résultat garde un bilan par outil (spec CCTI Claude+Codex § 3).
+export function runWorker(tools) {
   self.onmessage = async (e) => {
     if (!e.data || e.data.type !== 'start') return;
     const items = e.data.files;
-    const a = makeAnalyzer();
+    const analyzers = new Map();
+    const of = (tool) => { if (!analyzers.has(tool)) analyzers.set(tool, tools[tool].make()); return analyzers.get(tool); };
     let bytes = 0, done = 0, last = 0;
     const progress = (force) => {
       const now = Date.now();
       if (!force && now - last < 50) return;
       last = now;
-      self.postMessage({ type: 'progress', done, total: items.length, bytes, sessions: a.s.sessions });
+      let sessions = 0;
+      for (const a of analyzers.values()) sessions += a.s.sessions;
+      self.postMessage({ type: 'progress', done, total: items.length, bytes, sessions });
     };
     for (const it of items) {
+      const a = of(it.tool);
       if (it.skip) { a.skipFile(it); done++; continue; } // fichier reconnu mais illisible ici (.zst)
-      a.beginFile(fileInfo(it));
+      a.beginFile(tools[it.tool].info(it));
       try {
         await readLines(it.file, (line) => a.feedLine(line), (n) => { bytes += n; progress(false); });
       } catch {
@@ -43,6 +49,8 @@ export function runWorker(makeAnalyzer, fileInfo) {
       progress(false);
     }
     progress(true);
-    self.postMessage({ type: 'result', stats: a.result(), bytes });
+    const reports = {};
+    for (const [tool, a] of analyzers) reports[tool] = a.result();
+    self.postMessage({ type: 'result', reports, bytes });
   };
 }

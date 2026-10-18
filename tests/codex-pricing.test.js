@@ -1,4 +1,4 @@
-// tests/codex-pricing.test.js — facture CXTI (spec CXTI § 4.4).
+// tests/codex-pricing.test.js — facture Codex (spec CXTI § 4.4).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { priceFor, costUsd } from '../codex/pricing.js';

@@ -231,7 +231,7 @@ test('gaspillage : gros contextes, compactions, cache reconstruit après une pau
   assert.ok(w.costOver150kShare > 0 && w.costOver150kShare < 1);
 });
 
-// CXTI facture aux prix OpenAI : la grille doit pouvoir remplacer celle d'Anthropic.
+// Codex se facture aux prix OpenAI : la grille doit pouvoir remplacer celle d'Anthropic.
 test('une grille de prix injectée remplace celle de Claude', () => {
   const a = new Analyzer({ costUsd: (u, model) => (model === 'gpt-x' ? u.output / 1000 : null) });
   a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
