@@ -37,7 +37,7 @@ export default {
     again: 'Analyze another folder',
     offline: 'Offline version (HTML file)',
     source: 'Source code',
-    footer: 'CCTI stores nothing and sends nothing. Hours are in your time zone ({tz}). Independent project, not affiliated with Anthropic.',
+    footer: 'CCTI stores nothing and sends nothing. Hours are in your time zone ({tz}). Independent project, affiliated with neither Anthropic nor The Myers-Briggs Company.',
     langToggle: 'FR',
     themeToggle: 'Theme',
   },

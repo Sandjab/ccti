@@ -46,7 +46,7 @@ with a bill at the end because somebody has to say it.
 
 ## The sixteen types
 
-Four axes, two poles each, one letter per axis. CCTI is not affiliated with The Myers-Briggs Company; MBTI is their trademark. CCTI is an independent project, not affiliated with Anthropic; Claude is a trademark of Anthropic.
+Four axes, two poles each, one letter per axis. CCTI is an independent project, affiliated with neither Anthropic nor The Myers-Briggs Company. Claude is a trademark of Anthropic; MBTI and Myers-Briggs Type Indicator are trademarks of The Myers-Briggs Company.
 
 <table>
   <tr><td><img src="assets/types/en/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/en/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/en/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/en/CVIN.webp" alt="CVIN" width="200"></td></tr>

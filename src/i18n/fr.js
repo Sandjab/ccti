@@ -37,7 +37,7 @@ export default {
     again: 'Analyser un autre dossier',
     offline: 'Version hors ligne (fichier HTML)',
     source: 'Code source',
-    footer: "CCTI ne stocke rien et n'envoie rien. Les heures sont celles de votre fuseau ({tz}). Projet indépendant, non affilié à Anthropic.",
+    footer: "CCTI ne stocke rien et n'envoie rien. Les heures sont celles de votre fuseau ({tz}). Projet indépendant, sans lien avec Anthropic ni avec The Myers-Briggs Company.",
     langToggle: 'EN',
     themeToggle: 'Thème',
   },

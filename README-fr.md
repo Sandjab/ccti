@@ -45,7 +45,7 @@ formez avec Claude Code, avec une facture à la fin parce qu'il faut bien que qu
 
 ## Les seize types
 
-Quatre axes à deux pôles, une lettre par axe. CCTI n'est pas affilié à The Myers-Briggs Company ; MBTI est leur marque déposée. CCTI est un projet indépendant, non affilié à Anthropic ; Claude est une marque d'Anthropic.
+Quatre axes à deux pôles, une lettre par axe. CCTI est un projet indépendant, qui n'est affilié ni à Anthropic ni à The Myers-Briggs Company. Claude est une marque d'Anthropic ; MBTI et Myers-Briggs Type Indicator sont des marques de The Myers-Briggs Company.
 
 <table>
   <tr><td><img src="assets/types/fr/CVPD.webp" alt="CVPD" width="200"></td><td><img src="assets/types/fr/CVPN.webp" alt="CVPN" width="200"></td><td><img src="assets/types/fr/CVID.webp" alt="CVID" width="200"></td><td><img src="assets/types/fr/CVIN.webp" alt="CVIN" width="200"></td></tr>
