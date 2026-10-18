@@ -42,7 +42,7 @@ with a bill at the end because somebody has to say it.
 - **The moments**: messages by hour and weekday, after 9 pm, after midnight, all-nighters.
 - **The danger**: `rm -rf`, `push --force`, `reset --hard`, `sudo`, commits.
 - **The bill**: tokens per model and what it would have cost at public API prices, cache included.
-- **A diagnosis** with up to five observations, and a 1200×630 card (PNG, clipboard) to share.
+- **A diagnosis** with up to five observations, and a 1200×900 card (PNG, clipboard) to share.
 
 ## The sixteen types
 

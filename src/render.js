@@ -40,9 +40,7 @@ export function renderDiagnosis(root, profile, lang) {
   const d = diagnosisTexts(profile, lang);
   root.replaceChildren(
     h('h2', { text: t(lang, 'ui.diagnosisTitle') }),
-    typeImage(profile.code, lang, { class: 'type-illustration' }),
     h('p', { class: 'type-name', text: d.name }),
-    h('p', { class: 'type-text', text: d.text }),
     h('ul', {}, d.items.map((x) => h('li', { text: x }))),
   );
 }

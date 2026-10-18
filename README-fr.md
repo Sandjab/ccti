@@ -41,7 +41,7 @@ formez avec Claude Code, avec une facture à la fin parce qu'il faut bien que qu
 - **Les moments** : messages par heure et par jour, après 21 h, après minuit, nuits blanches.
 - **Le danger** : `rm -rf`, `push --force`, `reset --hard`, `sudo`, commits.
 - **La facture** : tokens par modèle et ce que ça aurait coûté au tarif API public, cache compris.
-- **Un diagnostic** avec jusqu'à cinq observations, et une carte 1200×630 (PNG, presse-papiers) à partager.
+- **Un diagnostic** avec jusqu'à cinq observations, et une carte 1200×900 (PNG, presse-papiers) à partager.
 
 ## Les seize types
 

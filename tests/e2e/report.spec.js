@@ -62,7 +62,7 @@ test('le bouton LinkedIn copie le diagnostic', async ({ page, context }) => {
   expect(text.split('\n')[0]).toBe('Analyse à la MBTI de mes 420 sessions avec Claude Code : 4 axes mesurés, 16 types possibles. Le mien :');
   await expect(page.locator('#diagnosis .type-name')).toHaveText("L'Architecte noctambule (AVPN)");
   expect(text).toContain("L'Architecte noctambule (AVPN)");
-  expect(text).toContain(await page.locator('#diagnosis .type-text').textContent());
+  expect(text).toContain((await page.locator('#card .type-text tspan').allTextContents()).join(' '));
   for (const li of await page.locator('#diagnosis li').allTextContents()) expect(text).toContain(`• ${li}`);
   expect(text).toContain('https://sandjab.github.io/freudiff');
 });

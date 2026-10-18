@@ -1,7 +1,7 @@
 // src/main.js — la page : états, sélection du dossier, worker, rendu, exports, langue, thème.
 import { detectLang, t, fmtInt } from './i18n.js';
 import { computeProfile } from './profile.js';
-import { renderCard } from './card.js';
+import { renderCard, CARD_W, CARD_H } from './card.js';
 import { renderDiagnosis, renderSections, diagnosisTexts, renderGallery } from './render.js';
 import { classify } from './files.js';
 import { createWorker } from './worker-factory.js';
@@ -165,20 +165,41 @@ function renderReport() {
   $('demo-banner').hidden = !state.demo;
   $('lowconf').hidden = !profile.lowConfidence;
   $('lowconf').textContent = t(lang, 'ui.lowConfidence', { n: fmtInt(lang, stats.volume.humanMessages) });
-  $('card').innerHTML = renderCard(stats, profile, { lang, theme: currentTheme() });
+  const n = ++cardRenders;
+  currentSvg().then((svg) => { if (n === cardRenders) $('card').innerHTML = svg; });
   renderDiagnosis($('diagnosis'), profile, lang);
   renderSections($('sections'), stats, lang);
 }
 
+// ---------- carte ----------
+// L'illustration est embarquée en data URI : le PNG est rendu depuis une URL data: qui ne charge
+// aucune ressource externe. Absente du fichier hors ligne : la carte s'affiche sans elle.
+const illustrations = new Map();
+function illustration(lang, code) {
+  const key = `${lang}/${code}`;
+  if (!illustrations.has(key)) {
+    illustrations.set(key, fetch(`assets/types/${key}.webp`)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(r.status))))
+      // type forcé : un serveur qui ne connaît pas .webp répond application/octet-stream
+      .then((blob) => new Promise((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = ko; fr.readAsDataURL(new Blob([blob], { type: 'image/webp' })); }))
+      .catch(() => null));
+  }
+  return illustrations.get(key);
+}
+let cardRenders = 0; // un changement de langue ou de thème rapide ne doit pas afficher une carte périmée
+async function currentSvg() {
+  const { stats, profile, lang } = state;
+  return renderCard(stats, profile, { lang, theme: currentTheme(), image: await illustration(lang, profile.code) });
+}
+
 // ---------- exports ----------
-const currentSvg = () => renderCard(state.stats, state.profile, { lang: state.lang, theme: currentTheme() });
 function download(name, blob) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-function svgToPng(svg, scale = 2, width = 1200, height = 630) {
+function svgToPng(svg, scale = 2, width = CARD_W, height = CARD_H) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     // URL data: plutôt que blob: — les SVG à foreignObject chargés en blob: rendent le canvas
@@ -231,8 +252,9 @@ async function reportSvg() {
   return { svg, width, height };
 }
 $('png').addEventListener('click', async () => {
-  try { download(`freudiff-${state.profile.code}.png`, await svgToPng(currentSvg())); }
-  catch { download(`freudiff-${state.profile.code}.svg`, new Blob([currentSvg()], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
+  const svg = await currentSvg();
+  try { download(`freudiff-${state.profile.code}.png`, await svgToPng(svg)); }
+  catch { download(`freudiff-${state.profile.code}.svg`, new Blob([svg], { type: 'image/svg+xml' })); toast(t(state.lang, 'ui.svg')); }
 });
 $('png-full').addEventListener('click', async () => {
   const { svg, width, height } = await reportSvg();

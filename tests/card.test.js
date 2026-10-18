@@ -1,19 +1,21 @@
 // tests/card.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderCard, THEMES, esc } from '../src/card.js';
+import { renderCard, THEMES, esc, wrap } from '../src/card.js';
+import fr from '../src/i18n/fr.js';
+import en from '../src/i18n/en.js';
 
 const stats = { volume: { sessions: 7, firstDay: '2026-10-05', lastDay: '2026-10-12' }, couple: { claudeAgreed: 4 }, bill: { costUsd: 0.34 } };
 const profile = { code: 'CLID', axes: { A: 32, V: 4, P: 29, N: 20 } };
 
 test('SVG autonome, bilingue, deux thèmes', () => {
   const fr = renderCard(stats, profile, { lang: 'fr', theme: 'light' });
-  assert.ok(fr.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"'));
+  assert.ok(fr.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900"'));
   assert.ok(fr.includes('Le Tireur d&#39;élite'));
   assert.ok(fr.includes('>CLID<'));
   assert.ok(fr.includes('Contrôle') && fr.includes('Autonomie') && fr.includes('Nocturne'));
   assert.ok(!/https?:\/\/(?!www\.w3\.org)/.test(fr), 'aucune ressource externe');
-  assert.ok(!fr.includes('<image') && !fr.includes('@import') && !fr.includes('<style'));
+  assert.ok(!fr.includes('<image') && !fr.includes('@import') && !fr.includes('<style'), 'sans illustration fournie, aucune image');
   assert.ok(!/&(?!amp;|lt;|gt;|quot;|#39;)/.test(fr), 'tous les & sont échappés');
   const en = renderCard(stats, profile, { lang: 'en', theme: 'dark' });
   assert.ok(en.includes('The Sniper') && en.includes(THEMES.dark.card));
@@ -61,4 +63,28 @@ test('info-bulle par axe : calcul, seuil et score, dans la langue de la carte', 
   assert.match(titles[2], /33\u00a0%/);
   const en = renderCard(stats, profile, { lang: 'en' });
   assert.match(en, /<title>[^<]*9 pm and 6 am[^<]*Nocturnal \(N\) from 35%[^<]*<\/title>/);
+});
+
+// Le diagnostic remonte dans la carte (choix du 18 oct. 2026) : partagée seule, elle doit dire
+// qui vous êtes, pas seulement afficher quatre lettres.
+test('la carte porte le texte du type et, si fournie, son illustration', () => {
+  const img = 'data:image/webp;base64,AAAA';
+  const svg = renderCard(stats, profile, { lang: 'fr', image: img });
+  assert.ok(svg.includes(`<image href="${img}"`));
+  const text = [...svg.matchAll(/<tspan[^>]*>([^<]*)<\/tspan>/g)].map((m) => m[1]).join(' ');
+  assert.equal(text, esc(fr.types.CLID.text));
+  const x = (s) => [...s.matchAll(/<tspan x="(\d+)"/g)].map((m) => +m[1]);
+  assert.ok(x(svg).every((v) => v > 360), "avec l'image, le texte passe à sa droite");
+  assert.ok(x(renderCard(stats, profile, { lang: 'fr' })).every((v) => v === 60), 'sans image, il reprend toute la largeur');
+});
+
+test('aucun texte de type ne déborde du bandeau, avec ou sans image', () => {
+  // 5 lignes de 32 px à partir de y=312 : la dernière ligne de base reste au-dessus du séparateur (478).
+  for (const types of [fr.types, en.types]) {
+    for (const { text } of Object.values(types)) {
+      assert.ok(wrap(text, 70).length <= 5, text);
+      assert.ok(wrap(text, 70).every((l) => l.length <= 70 || !l.includes(' ')), text);
+    }
+  }
+  assert.deepEqual(wrap('a bb ccc dddd', 6), ['a bb', 'ccc', 'dddd']);
 });

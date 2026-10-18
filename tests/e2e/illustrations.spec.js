@@ -2,15 +2,18 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 
-test('le bilan montre l\'illustration du type, dans la langue de la page', async ({ page }) => {
+// L'image est embarquée en data URI : sans cela, le PNG de la carte la perdrait.
+test('la carte montre l\'illustration du type, dans la langue de la page', async ({ page }) => {
   await page.goto('/');
   await page.click('#demo');
-  const img = page.locator('#diagnosis img.type-illustration');
-  await expect(img).toHaveAttribute('src', 'assets/types/fr/AVPN.webp');
-  await expect(img).toHaveAttribute('alt', /L'Architecte noctambule/);
-  await expect.poll(() => img.evaluate((e) => e.complete && e.naturalWidth)).toBeGreaterThan(0);
+  const href = () => page.locator('#card svg image').getAttribute('href');
+  await expect.poll(href).toMatch(/^data:image\/webp;base64,/);
+  const fr = await href();
   await page.click('#lang');
-  await expect(img).toHaveAttribute('src', 'assets/types/en/AVPN.webp');
+  await expect(page.locator('#card svg')).toContainText('The Night Architect');
+  await expect.poll(href).toMatch(/^data:image\/webp;base64,/);
+  expect(await href()).not.toBe(fr);
+  await expect(page.locator('#diagnosis img')).toHaveCount(0);
 });
 
 test('l\'accueil présente les 16 types en galerie', async ({ page }) => {
@@ -26,5 +29,6 @@ test('l\'accueil présente les 16 types en galerie', async ({ page }) => {
 test('fichier hors ligne : illustration absente masquée proprement', async ({ page }) => {
   await page.goto('file://' + path.resolve('dist/freudiff.html'));
   await page.click('#demo');
-  await expect(page.locator('#diagnosis img.type-illustration')).toBeHidden();
+  await expect(page.locator('#card svg')).toContainText("L'Architecte noctambule");
+  await expect(page.locator('#card svg image')).toHaveCount(0);
 });
