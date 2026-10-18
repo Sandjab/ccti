@@ -36,7 +36,7 @@ export default {
     shareFooter: '16-type personality test for Claude Code and Codex, computed in the browser, nothing leaves your machine: https://sandjab.github.io/ccti',
     again: 'Analyze another folder',
     addFolder: 'Add a folder', toolClaude: 'Claude Code · {n} sessions', toolCodex: 'Codex · {n} sessions',
-    nothingAdded: 'No new readable session in this folder.',
+    nothingAdded: 'No new readable session in this folder.', importFailed: 'Import failed: {msg}',
     limits: "Only sessions on this device are read: not cloud sessions, and not the ones Claude Code already deleted (after 30 days by default, cleanupPeriodDays setting). For another device, copy its folder here and add it.",
     covExamined: 'Files examined', covClaude: 'Claude Code files', covCodex: 'Codex files',
     covCompressed: 'decompressed .jsonl.zst archives', covDuplicates: 'duplicates of a session already read', covIndex: 'history and index files', covUnrecognized: 'unrecognized',

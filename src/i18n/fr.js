@@ -36,7 +36,7 @@ export default {
     shareFooter: 'Test de personnalité à 16 types pour Claude Code et Codex, calculé dans le navigateur, rien ne quitte la machine : https://sandjab.github.io/ccti',
     again: 'Analyser un autre dossier',
     addFolder: 'Ajouter un dossier', toolClaude: 'Claude Code · {n} sessions', toolCodex: 'Codex · {n} sessions',
-    nothingAdded: 'Aucune nouvelle session lisible dans ce dossier.',
+    nothingAdded: 'Aucune nouvelle session lisible dans ce dossier.', importFailed: 'Échec de l\'import : {msg}',
     limits: "Seules les sessions présentes sur cet appareil sont lues : ni les sessions dans le cloud, ni celles que Claude Code a déjà effacées (après 30 jours par défaut, réglage cleanupPeriodDays). Pour un autre appareil, copiez son dossier ici et ajoutez-le.",
     covExamined: 'Fichiers examinés', covClaude: 'fichiers Claude Code', covCodex: 'fichiers Codex',
     covCompressed: 'archives .jsonl.zst décompressées', covDuplicates: 'doublons d\'une session déjà lue', covIndex: 'historiques et index', covUnrecognized: 'non reconnus',

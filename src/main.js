@@ -56,31 +56,45 @@ function toast(msg) { $('toast').textContent = msg; setTimeout(() => { if ($('to
 // ---------- collecte des fichiers ----------
 // Le parcours d'un gros dossier (~/.claude entier) prend plusieurs secondes : on affiche l'état
 // « progress » dès le début, avec le nombre de fichiers de session trouvés.
+// Chaque parcours a son numéro : un parcours annulé ou remplacé ne touche plus à rien (issue #3).
+let scans = 0;
 function beginScan() {
-  state.scanning = true;
+  state.scan = ++scans;
   showError('');
   $('bar').removeAttribute('value'); // barre indéterminée
   $('progress-text').textContent = t(state.lang, 'ui.scanning', { n: fmtInt(state.lang, 0) });
   show('progress');
+  return state.scan;
 }
 function found(out, item) {
   out.push(item);
   if (out.length % 25 === 1) $('progress-text').textContent = t(state.lang, 'ui.scanning', { n: fmtInt(state.lang, out.length) });
 }
-function endScan(out) {
-  if (!state.scanning) return; // annulé pendant le parcours
-  state.scanning = false;
+function endScan(out, op) {
+  if (state.scan !== op) return; // annulé ou remplacé pendant le parcours
+  state.scan = 0;
   start(out);
 }
-async function collectFromHandle(dir, prefix, out) {
+// Échec d'un import : retour au bilan s'il y en a un, le message en toast ; sinon à l'accueil (issue #10).
+function importFailed(err) {
+  const msg = String((err && err.message) || err);
+  back();
+  if (state.reports) toast(t(state.lang, 'ui.importFailed', { msg })); else showError(msg);
+}
+function failScan(op, err) {
+  if (state.scan !== op) return;
+  state.scan = 0;
+  importFailed(err);
+}
+async function collectFromHandle(dir, prefix, out, op) {
   for await (const [name, handle] of dir.entries()) {
     const rel = prefix ? `${prefix}/${name}` : name;
-    if (!state.scanning) return;
+    if (state.scan !== op) return;
     if (handle.kind === 'file') { if (accept(name)) found(out, { file: await handle.getFile(), rel }); }
-    else if (name !== 'node_modules') await collectFromHandle(handle, rel, out);
+    else if (name !== 'node_modules') await collectFromHandle(handle, rel, out, op);
   }
 }
-function collectFromEntry(entry, prefix, out) {
+function collectFromEntry(entry, prefix, out, op) {
   return new Promise((resolve) => {
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isFile) {
@@ -88,11 +102,11 @@ function collectFromEntry(entry, prefix, out) {
       entry.file((f) => { found(out, { file: f, rel }); resolve(); }, () => resolve());
       return;
     }
-    if (entry.name === 'node_modules' || !state.scanning) return resolve();
+    if (entry.name === 'node_modules' || state.scan !== op) return resolve();
     const reader = entry.createReader();
     const all = [];
     const next = () => reader.readEntries(async (entries) => {
-      if (!entries.length) { for (const e of all) await collectFromEntry(e, rel, out); return resolve(); }
+      if (!entries.length) { for (const e of all) await collectFromEntry(e, rel, out, op); return resolve(); }
       all.push(...entries);
       next();
     }, () => resolve());
@@ -106,15 +120,17 @@ async function handleDrop(ev) {
   // Les items sont invalidés dès que le gestionnaire rend la main : tout saisir de façon synchrone.
   const pending = items.map((it) => (it.getAsFileSystemHandle ? { p: it.getAsFileSystemHandle() } : { e: it.webkitGetAsEntry ? it.webkitGetAsEntry() : null }));
   const out = [];
-  beginScan();
-  for (const x of pending) {
-    if (x.p) {
-      const hd = await x.p;
-      if (hd && hd.kind === 'directory') await collectFromHandle(hd, hd.name, out);
-      else if (hd && hd.kind === 'file' && accept(hd.name)) found(out, { file: await hd.getFile(), rel: hd.name });
-    } else if (x.e) await collectFromEntry(x.e, '', out);
-  }
-  endScan(out);
+  const op = beginScan();
+  try {
+    for (const x of pending) {
+      if (x.p) {
+        const hd = await x.p;
+        if (hd && hd.kind === 'directory') await collectFromHandle(hd, hd.name, out, op);
+        else if (hd && hd.kind === 'file' && accept(hd.name)) found(out, { file: await hd.getFile(), rel: hd.name });
+      } else if (x.e) await collectFromEntry(x.e, '', out, op);
+    }
+    endScan(out, op);
+  } catch (err) { failScan(op, err); }
 }
 const drop = $('drop');
 drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
@@ -125,13 +141,17 @@ document.addEventListener('drop', (e) => e.preventDefault());
 // Sélecteur de dossier : depuis l'accueil, ou depuis le bilan pour ajouter le dossier de l'autre outil.
 async function pickFolder() {
   if (window.showDirectoryPicker) {
+    let op = 0;
     try {
       const hd = await window.showDirectoryPicker({ mode: 'read' });
       const out = [];
-      beginScan();
-      await collectFromHandle(hd, hd.name, out);
-      endScan(out);
-    } catch (err) { state.scanning = false; if (!err || err.name !== 'AbortError') { show('intro'); showError(String((err && err.message) || err)); } }
+      op = beginScan();
+      await collectFromHandle(hd, hd.name, out, op);
+      endScan(out, op);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // sélecteur fermé
+      if (op) failScan(op, err); else importFailed(err);
+    }
   } else $('fallback').click();
 }
 $('pick').addEventListener('click', pickFolder);
@@ -181,12 +201,12 @@ function start(entries) {
       setReports(run.reports, prev ? { touched, before: prev.reports } : null);
     }
   };
-  w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
+  w.onerror = (err) => { w.terminate(); state.worker = null; importFailed((err && err.message) || 'Worker error'); };
   w.postMessage({ type: 'start', files: sent });
 }
 // Après une annulation ou une erreur : retour au bilan affiché s'il y en a un (ajout d'un dossier), sinon à l'accueil.
 function back() { show(state.reports ? 'report' : 'intro'); }
-$('cancel').addEventListener('click', () => { state.scanning = false; if (state.worker) { state.worker.terminate(); state.worker = null; } back(); });
+$('cancel').addEventListener('click', () => { state.scan = 0; if (state.worker) { state.worker.terminate(); state.worker = null; } back(); });
 // Outils affichés : ceux qui ont au moins une session (à défaut, tous) ; le plus fourni d'abord.
 // Outil choisi : au premier dépôt, le plus fourni ; après un ajout, l'outil que le lot vient d'apporter,
 // sinon celui déjà affiché (spec issue #2 § 5).

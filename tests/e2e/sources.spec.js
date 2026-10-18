@@ -13,12 +13,15 @@ const CODEX = read('tests/fixtures-codex', '.codex/');
 const ZST_ONLY = read('tests/fixtures-codex-zst', '.codex/');
 
 // Faux showDirectoryPicker : l'arborescence est construite en mémoire à partir de { rel, text }.
-// Chaque appel prend le lot suivant (« Ajouter un dossier » rouvre le sélecteur).
+// Chaque appel prend le lot suivant (« Ajouter un dossier » rouvre le sélecteur). window.__pickerPlan,
+// facultatif, règle chaque appel : { delay } avant le parcours, { fail } pour qu'il échoue (issues #3, #10).
 async function stubPicker(page, ...batches) {
   await page.addInitScript((batches) => {
     let call = 0;
     window.showDirectoryPicker = async () => {
-      const files = batches[Math.min(call++, batches.length - 1)];
+      const idx = call++;
+      const files = batches[Math.min(idx, batches.length - 1)];
+      const { delay = 0, fail } = (window.__pickerPlan || [])[idx] || {};
       const tree = { kind: 'directory', name: 'home', children: new Map() };
       for (const { rel, b64, lastModified } of files) {
         const parts = rel.split('/'); let node = tree;
@@ -32,7 +35,13 @@ async function stubPicker(page, ...batches) {
       const wrap = (n) => n.kind === 'file'
         ? { kind: 'file', name: n.name, getFile: async () => { const lm = 1_700_000_000_000 + (t++); return new File([Uint8Array.from(atob(n.b64), (c) => c.charCodeAt(0))], n.name, { lastModified: n.lastModified ?? lm }); } }
         : { kind: 'directory', name: n.name, async *entries() { for (const [k, c] of n.children) yield [k, wrap(c)]; } };
-      return wrap(tree);
+      const root = wrap(tree), inner = root.entries;
+      root.entries = async function* () {
+        await new Promise((r) => setTimeout(r, delay));
+        if (fail) throw new Error(fail);
+        yield* inner.call(root);
+      };
+      return root;
     };
   }, batches);
 }
@@ -294,4 +303,64 @@ test('après un ajout : l\'outil apporté s\'affiche, puis l\'outil affiché res
   await expect(page.locator('#coverage')).toContainText('doublons d\'une session déjà lue : 1', { timeout: 30_000 });
   await expect(page.locator('#card svg')).toContainText('CLPN');
   await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions']);
+});
+
+// Issue #3 : un parcours annulé ne revit pas quand un autre commence ; seul le second dossier compte.
+test('annuler un parcours lent puis choisir un autre dossier : seul le second compte', async ({ page }) => {
+  await page.addInitScript(() => { window.__pickerPlan = [{ delay: 300 }, { delay: 650 }]; });
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#progress')).toBeVisible();
+  await page.click('#cancel');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.waitForTimeout(800); // le premier parcours, s'il revivait, aurait fini ici
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+  await expect(page.locator('#tools button')).toHaveCount(0);
+  await expect(page.locator('#coverage')).toContainText('fichiers Claude Code : 0');
+});
+
+// Issue #10 : un échec pendant « Ajouter un dossier » laisse le bilan visible et le dit.
+test('échec du parcours pendant un ajout : le bilan reste, l\'erreur est dite', async ({ page }) => {
+  await page.addInitScript(() => { window.__pickerPlan = [{}, { fail: 'lecture refusée' }]; });
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('lecture refusée');
+  await expect(page.locator('#report')).toBeVisible();
+  await expect(page.locator('#card svg')).toContainText('CLID');
+});
+
+test('erreur du worker pendant un ajout : le bilan reste, l\'erreur est dite', async ({ page }) => {
+  await page.addInitScript(() => {
+    const W = window.Worker; let i = 0;
+    window.Worker = function (...a) {
+      const w = new W(...a);
+      if (i++ === 1) w.postMessage = () => setTimeout(() => w.onerror && w.onerror(new ErrorEvent('error', { message: 'worker en panne' })));
+      return w;
+    };
+  });
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('worker en panne');
+  await expect(page.locator('#report')).toBeVisible();
+  await expect(page.locator('#card svg')).toContainText('CLID');
+});
+
+test('glisser-déposer qui échoue : retour à l\'accueil avec le message', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    DataTransferItem.prototype.getAsFileSystemHandle = () => Promise.reject(new Error('accès retiré'));
+    const dt = new DataTransfer();
+    dt.items.add(new File(['x'], 'a.jsonl'));
+    document.getElementById('drop').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+  });
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.locator('#error')).toContainText('accès retiré');
 });
