@@ -5,7 +5,7 @@ import DEMO from '../codex/demo.js';
 import { computeProfile } from '../src/profile.js';
 import { renderCard } from '../src/card.js';
 import { costUsd } from '../codex/pricing.js';
-import { applyCodexTexts } from '../codex/i18n.js';
+import { setTool } from '../src/i18n.js';
 
 test('la démo CXTI donne ALID, des sommes justes et une facture aux prix OpenAI', () => {
   const p = computeProfile(DEMO);
@@ -23,8 +23,8 @@ test('la démo CXTI donne ALID, des sommes justes et une facture aux prix OpenAI
   }
   assert.equal(DEMO.bill.costUsd, Math.round(total * 100) / 100);
   assert.equal(DEMO.couple.questionsAnswered, null);
-  applyCodexTexts();
+  setTool('codex');
   const svg = renderCard(DEMO, p, { lang: 'fr' });
-  assert.ok(svg.includes('>CXTI</text>'));
+  assert.ok(svg.includes('>CCTI</text>')); assert.ok(svg.includes('· Codex'));
   assert.ok(svg.includes('Le Joueur de YOLO'));
 });

@@ -1,8 +1,13 @@
-// src/i18n.js — accès aux textes et formats (spec § 7.4).
+// src/i18n.js — accès aux textes et formats (spec § 7.4). Deux jeux de textes : Claude Code et Codex,
+// choisis par l'outil du bilan affiché (spec CCTI Claude+Codex § 5).
 import fr from './i18n/fr.js';
 import en from './i18n/en.js';
+import { codexTexts } from '../codex/i18n.js';
 
 export const LANGS = { fr, en };
+export const CODEX_LANGS = { fr: codexTexts(fr, 'fr'), en: codexTexts(en, 'en') };
+let tool = 'claude';
+export function setTool(x) { tool = x === 'codex' ? 'codex' : 'claude'; }
 const locale = (lang) => (lang === 'fr' ? 'fr-FR' : 'en-US');
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -16,7 +21,8 @@ export function detectLang(nav = globalThis.navigator) {
 }
 
 export function t(lang, key, vars) {
-  const dict = LANGS[lang] || en;
+  const set = tool === 'codex' ? CODEX_LANGS : LANGS;
+  const dict = set[lang] || set.en;
   const v = key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), dict);
   if (v === undefined) return key;
   if (typeof v !== 'string' || !vars) return v;

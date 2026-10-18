@@ -1,47 +1,50 @@
-// tests/codex-i18n.test.js — textes CXTI (spec CXTI § 3.4).
-import { test } from 'node:test';
+// tests/codex-i18n.test.js — textes des bilans Codex (spec CXTI § 3.4 ; spec CCTI Claude+Codex § 5).
+import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { LANGS, t } from '../src/i18n.js';
-import { applyCodexTexts } from '../codex/i18n.js';
+import { LANGS, CODEX_LANGS, t, setTool } from '../src/i18n.js';
 
-const fr = LANGS.fr, en = LANGS.en; // références aux dictionnaires CCTI avant la surcouche
-applyCodexTexts();
+afterEach(() => setTool('claude'));
 const all = (v) => (typeof v === 'string' ? [v] : v && typeof v === 'object' ? Object.values(v).flatMap(all) : []);
 
-// La page Codex ne doit jamais parler de Claude ni renvoyer vers la page CCTI.
-test('aucun texte CXTI ne mentionne Claude ni ~/.claude', () => {
-  for (const lang of ['fr', 'en']) for (const s of all(LANGS[lang])) assert.ok(!/claude/i.test(s), `${lang} : ${s}`);
-});
-
-test('toute URL partagée mène à la page Codex', () => {
-  for (const lang of ['fr', 'en']) for (const s of all(LANGS[lang])) {
-    for (const m of s.matchAll(/github\.io\/ccti(\S*)/g)) assert.ok(m[1].startsWith('/codex'), `${lang} : ${s}`);
-  }
-});
-
-test('nom, emplacement du dossier, mention OpenAI, ligne des fichiers compressés', () => {
+// Un bilan Codex ne parle ni de Claude ni d'Anthropic ; l'accueil (ui), commun, cite les deux outils,
+// et le sous-titre de marque contient « Claude and Codex ».
+test('bilan Codex : ni Claude, ni Anthropic, ni modèle Claude', () => {
   for (const lang of ['fr', 'en']) {
-    assert.equal(t(lang, 'ui.title'), 'CXTI');
-    assert.equal(t(lang, 'card.subtitle'), 'Codex Type Indicator');
-    assert.ok(t(lang, 'ui.dropHint').includes('~/.codex/sessions'));
-    assert.ok(t(lang, 'ui.footer').includes('OpenAI'));
-    assert.ok(t(lang, 'ui.noFiles').includes('zstd -d'));
-    assert.ok(t(lang, 'labels.compressedSkipped').includes('zstd -d'));
+    const { ui, card: { subtitle, ...card }, ...report } = CODEX_LANGS[lang];
+    for (const s of all({ ...report, card })) assert.ok(!/claude|anthropic|opus|sonnet|fable|haiku/i.test(s), `${lang} : ${s}`);
+    assert.ok(!/Claude/.test(ui.shareIntro), `${lang} shareIntro`);
   }
+});
+
+test('sous-titre de carte par outil', () => {
+  assert.equal(t('fr', 'card.subtitle'), 'Claude and Codex Type Indicator · Claude Code');
+  setTool('codex');
+  assert.equal(t('fr', 'card.subtitle'), 'Claude and Codex Type Indicator · Codex');
+  assert.equal(t('en', 'card.subtitle'), 'Claude and Codex Type Indicator · Codex');
+});
+
+test('setTool choisit le jeu de textes sans modifier les textes Claude', () => {
+  setTool('codex');
   assert.equal(t('fr', 'types.ALID.name'), 'Le Joueur de YOLO');
   assert.ok(t('fr', 'observations.apologies').startsWith('Codex'));
+  assert.ok(t('fr', 'labels.compressedSkipped').includes('zstd -d'));
+  setTool('claude');
+  assert.ok(t('fr', 'observations.apologies').startsWith('Claude'));
+  assert.equal(LANGS.fr.ui.title, 'CCTI');
 });
 
-test('les dictionnaires CCTI d\'origine ne sont pas modifiés', () => {
-  assert.equal(fr.ui.title, 'CCTI');
-  assert.ok(en.card.agreed.includes('Claude'));
-});
-
-// Le diagnostic CXTI ne parle ni d'Anthropic ni des modèles Claude ; seule la mention
-// d'indépendance du pied de page cite Anthropic, à dessein.
-test('aucun texte CXTI ne cite Anthropic ou un modèle Claude, hors mention d\'indépendance', () => {
-  for (const lang of ['fr', 'en']) {
-    const { footer, ...ui } = LANGS[lang].ui;
-    for (const s of all({ ...LANGS[lang], ui })) assert.ok(!/anthropic|opus|sonnet|fable|haiku/i.test(s), `${lang} : ${s}`);
+test('accueil commun aux deux outils', () => {
+  for (const tool of ['claude', 'codex']) {
+    setTool(tool);
+    for (const lang of ['fr', 'en']) {
+      assert.equal(t(lang, 'ui.title'), 'CCTI');
+      const drop = t(lang, 'ui.dropHint');
+      assert.ok(drop.includes('~/.claude/projects') && drop.includes('~/.codex/sessions'), `${tool} ${lang}`);
+      const foot = t(lang, 'ui.footer');
+      assert.ok(foot.includes('Anthropic') && foot.includes('OpenAI') && foot.includes('Myers-Briggs'), `${tool} ${lang}`);
+      assert.ok(t(lang, 'ui.noFiles').includes('zstd -d'));
+      assert.ok(t(lang, 'ui.shareFooter').endsWith('https://sandjab.github.io/ccti'));
+      assert.ok(t(lang, 'ui.toolCodex', { n: '3' }).includes('3'));
+    }
   }
 });

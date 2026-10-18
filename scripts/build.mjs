@@ -1,17 +1,14 @@
-// scripts/build.mjs — inline CSS + modules ES (réécrits en IIFE) → dist/ccti.html et dist/cxti.html (spec § 7.3, spec CXTI § 3.6).
+// scripts/build.mjs — inline CSS + modules ES (réécrits en IIFE) → dist/ccti.html (spec § 7.3).
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const SHARED = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/profile.js', 'src/i18n/fr.js', 'src/i18n/en.js',
-  'src/i18n.js', 'src/card.js', 'src/render.js', 'src/app.js'];
+  'codex/i18n.js', 'src/i18n.js', 'src/card.js', 'src/render.js', 'src/app.js'];
 // Ordre : chaque module après ceux qu'il importe.
 const TARGETS = [
   { html: 'index.html', out: 'dist/ccti.html', css: 'src/styles.css', script: 'src/main.js',
     modules: [...SHARED, 'src/files.js', 'src/demo.js', 'src/worker-factory.js', 'src/main.js'],
     worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/worker-core.js', 'src/worker.js'] },
-  { html: 'codex/index.html', out: 'dist/cxti.html', css: '../src/styles.css', script: 'main.js',
-    modules: [...SHARED, 'codex/files.js', 'codex/demo.js', 'codex/i18n.js', 'codex/worker-factory.js', 'codex/main.js'],
-    worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/worker-core.js', 'codex/pricing.js', 'codex/analyzer.js', 'codex/worker.js'] },
 ];
 
 const modName = (p) => '__m_' + p.replace(/^src\//, '').replace(/\.js$/, '').replace(/[^a-zA-Z0-9]/g, '_');

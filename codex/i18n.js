@@ -1,9 +1,8 @@
-// codex/i18n.js — textes CXTI (spec CXTI § 3.4) : les textes CCTI où Claude devient Codex,
-// puis les clés réécrites à la main. applyCodexTexts() remplace LANGS.fr et LANGS.en, une fois, avant boot().
-import { LANGS } from '../src/i18n.js';
-
+// codex/i18n.js — textes des bilans Codex (spec CXTI § 3.4 ; spec CCTI Claude+Codex § 5) : les textes
+// Claude où Claude devient Codex, puis quelques clés réécrites. L'accueil (ui) est commun aux deux outils
+// et n'est pas transformé, sauf l'intro du texte de partage. Fonction pure : rien n'est modifié en place.
 function swap(v) {
-  if (typeof v === 'string') return v.replace(/Claude Code/g, 'Codex').replace(/Claude/g, 'Codex').replace(/CCTI/g, 'CXTI');
+  if (typeof v === 'string') return v.replace(/Claude Code/g, 'Codex').replace(/Claude/g, 'Codex');
   if (Array.isArray(v)) return v.map(swap);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swap(x)]));
   return v;
@@ -16,16 +15,8 @@ function merge(base, over) {
 
 const OVERRIDES = {
   fr: {
-    ui: {
-      dropHint: 'Glissez ici le dossier ~/.codex/sessions',
-      whereMac: 'macOS : ~/.codex/sessions. Dans le sélecteur, Cmd+Shift+. affiche les dossiers cachés, ou Cmd+Shift+G puis collez le chemin.',
-      whereWin: "Windows : %USERPROFILE%\\.codex\\sessions, à coller dans la barre d'adresse du sélecteur.",
-      whereLinux: 'Linux : ~/.codex/sessions (Ctrl+H affiche les dossiers cachés).',
-      noFiles: 'Aucune session lisible. Le dossier attendu est ~/.codex/sessions, avec des fichiers rollout-*.jsonl. Les fichiers compressés .jsonl.zst se décompressent avec zstd -d.',
-      shareFooter: 'Test de personnalité à 16 types pour Codex, calculé dans le navigateur, rien ne quitte la machine : https://sandjab.github.io/ccti/codex/',
-      footer: "CXTI ne stocke rien et n'envoie rien. Les heures sont celles de votre fuseau ({tz}). Projet indépendant, sans lien avec OpenAI, Anthropic ni The Myers-Briggs Company.",
-    },
-    card: { subtitle: 'Codex Type Indicator', site: 'sandjab.github.io/ccti/codex' },
+    ui: { shareIntro: 'Analyse à la MBTI de mes {sessions} sessions avec Codex : 4 axes mesurés, 16 types possibles. Le mien :' },
+    card: { subtitle: 'Claude and Codex Type Indicator · Codex' },
     axesHelp: {
       A: "Contrôle ou Autonomie. 70 % : la part de vos messages envoyés avec un réglage qui laisse Codex agir sans demander (approbation « never », avec ou sans danger-full-access) ; le réglage par défaut (on-request) compte en contrôle. 30 % : l'absence de friction, c'est-à-dire peu d'interruptions et de refus d'outils par message. Autonomie (A) à partir de {t}, sinon Contrôle (C). Votre score : {score}.",
     },
@@ -36,21 +27,13 @@ const OVERRIDES = {
       compressedSkipped: 'Sessions compressées ignorées (zstd -d pour les inclure)',
     },
     observations: {
-      cost: "Équivalent API : {n}. Votre abonnement est la meilleure affaire de votre vie, et OpenAI le sait.",
+      cost: 'Équivalent API : {n}. Votre abonnement est la meilleure affaire de votre vie, et OpenAI le sait.',
       models: "{n} modèles traversés. GPT-5, Codex, mini… Vous n'êtes resté fidèle à personne.",
     },
   },
   en: {
-    ui: {
-      dropHint: 'Drop your ~/.codex/sessions folder here',
-      whereMac: 'macOS: ~/.codex/sessions. In the picker, Cmd+Shift+. shows hidden folders, or Cmd+Shift+G and paste the path.',
-      whereWin: "Windows: %USERPROFILE%\\.codex\\sessions, paste it in the picker's address bar.",
-      whereLinux: 'Linux: ~/.codex/sessions (Ctrl+H shows hidden folders).',
-      noFiles: 'No readable sessions. The expected folder is ~/.codex/sessions, containing rollout-*.jsonl files. Compressed .jsonl.zst files can be decompressed with zstd -d.',
-      shareFooter: '16-type personality test for Codex, computed in the browser, nothing leaves your machine: https://sandjab.github.io/ccti/codex/',
-      footer: 'CXTI stores nothing and sends nothing. Hours are in your time zone ({tz}). Independent project, affiliated with neither OpenAI, Anthropic nor The Myers-Briggs Company.',
-    },
-    card: { subtitle: 'Codex Type Indicator', site: 'sandjab.github.io/ccti/codex' },
+    ui: { shareIntro: 'An MBTI-style analysis of my {sessions} Codex sessions: 4 measured axes, 16 possible types. Mine:' },
+    card: { subtitle: 'Claude and Codex Type Indicator · Codex' },
     axesHelp: {
       A: 'Control or Autonomy. 70%: the share of your messages sent with a setting that lets Codex act without asking (approval "never", with or without danger-full-access); the default setting (on-request) counts as control. 30%: lack of friction, meaning few interruptions and tool denials per message. Autonomy (A) from {t}, otherwise Control (C). Your score: {score}.',
     },
@@ -67,6 +50,7 @@ const OVERRIDES = {
   },
 };
 
-export function applyCodexTexts() {
-  for (const lang of Object.keys(LANGS)) LANGS[lang] = merge(swap(LANGS[lang]), OVERRIDES[lang] || {});
+export function codexTexts(dict, lang) {
+  const { ui, ...report } = dict;
+  return merge({ ui, ...swap(report) }, OVERRIDES[lang] || {});
 }
