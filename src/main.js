@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 // Fichier autonome ouvert en local : les illustrations n'y sont pas. On ne les demande pas, pour ne pas
 // remplir la console d'erreurs (spec issue #2 § 6).
 const OFFLINE = location.protocol === 'file:';
-const state = { lang: detectLang(), reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], dups: new Set(), coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
+const state = { lang: detectLang(), scan: 0, reports: null, tools: [], tool: 'claude', stats: null, profile: null, items: [], entries: [], dups: new Set(), coverage: null, result: null, worker: null, demo: false, startedAt: 0 };
 // préfixe des fichiers exportés : inchangé pour Claude, « ccti-codex » pour Codex
 const prefix = () => (state.tool === 'codex' ? 'ccti-codex' : 'ccti');
 
@@ -73,7 +73,7 @@ function found(out, item) {
 function endScan(out, op) {
   if (state.scan !== op) return; // annulé ou remplacé pendant le parcours
   state.scan = 0;
-  start(out);
+  try { start(out); } catch (err) { importFailed(err); } // le parcours est clos : failScan ne verrait plus rien
 }
 // Échec d'un import : retour au bilan s'il y en a un, le message en toast ; sinon à l'accueil (issue #10).
 function importFailed(err) {

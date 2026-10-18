@@ -364,3 +364,28 @@ test('glisser-déposer qui échoue : retour à l\'accueil avec le message', asyn
   await expect(page.locator('#intro')).toBeVisible();
   await expect(page.locator('#error')).toContainText('accès retiré');
 });
+
+// Revue du lot #3/#10 : une exception levée au lancement de l'analyse (Worker refusé) n'est pas avalée ;
+// l'écran ne reste pas bloqué sur « Analyse en cours ».
+test('Worker refusé pendant un ajout : le bilan reste, l\'erreur est dite', async ({ page }) => {
+  await page.addInitScript(() => {
+    const W = window.Worker; let i = 0;
+    window.Worker = function (...a) { if (i++ === 1) throw new Error('worker refusé'); return new W(...a); };
+  });
+  await stubPicker(page, CLAUDE, CODEX);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#report')).toBeVisible({ timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#toast')).toContainText('worker refusé');
+  await expect(page.locator('#report')).toBeVisible();
+});
+
+test('Worker refusé dès le premier dossier : retour à l\'accueil avec le message', async ({ page }) => {
+  await page.addInitScript(() => { window.Worker = function () { throw new Error('worker refusé'); }; });
+  await stubPicker(page, CLAUDE);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#intro')).toBeVisible();
+  await expect(page.locator('#error')).toContainText('worker refusé');
+});
