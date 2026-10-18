@@ -4,7 +4,7 @@ import { detectLang, t, fmtInt, setTool } from './i18n.js';
 import { computeProfile } from './profile.js';
 import { renderCard, CARD_W, CARD_H } from './card.js';
 import { renderDiagnosis, renderSections, diagnosisTexts, renderGallery, h } from './render.js';
-import { accept, addBatch, coverage } from './sources.js';
+import { accept, addBatch, coverage, mergeRuns } from './sources.js';
 import { createWorker } from './worker-factory.js';
 import DEMO_STATS from './demo.js';
 import CODEX_DEMO from '../codex/demo.js';
@@ -143,7 +143,7 @@ function start(entries) {
   showError('');
   // Les items retenus ne changent qu'à l'arrivée d'un résultat : une analyse annulée ou en erreur
   // ne se mêle pas au dépôt suivant.
-  const { items: files, added, dups } = addBatch(state.items, entries);
+  const { items: files, added, touched, dups } = addBatch(state.items, entries);
   const examined = [...state.entries, ...entries]; // tout fichier .jsonl / .jsonl.zst collecté, pour le reçu (issue #1)
   const allDups = [...state.dups, ...dups];
   if (!added) {
@@ -153,6 +153,9 @@ function start(entries) {
     }
     show('intro'); showError(t(state.lang, 'ui.noFiles')); return;
   }
+  // Ajout : seuls les outils touchés sont relus, les autres bilans sont repris (spec issue #2 § 4).
+  const prev = state.result;
+  const sent = prev ? files.filter((it) => touched.has(it.tool)) : files;
   state.demo = false; state.startedAt = Date.now();
   $('bar').value = 0; $('progress-text').textContent = '';
   show('progress');
@@ -166,10 +169,16 @@ function start(entries) {
         done: fmtInt(state.lang, d.done), total: fmtInt(state.lang, d.total), mb: fmtInt(state.lang, d.bytes / 1e6),
         sessions: fmtInt(state.lang, d.sessions), sec: Math.round((Date.now() - state.startedAt) / 1000),
       });
-    } else if (d.type === 'result') { w.terminate(); state.worker = null; state.items = files; state.entries = examined; state.dups = allDups; state.result = d; state.coverage = receipt(examined, files, allDups, d); setReports(d.reports); }
+    } else if (d.type === 'result') {
+      w.terminate(); state.worker = null;
+      const run = mergeRuns(prev, d, touched);
+      state.items = files; state.entries = examined; state.dups = allDups; state.result = run;
+      state.coverage = receipt(examined, files, allDups, run);
+      setReports(run.reports);
+    }
   };
   w.onerror = (err) => { w.terminate(); state.worker = null; back(); if (!state.reports) showError((err && err.message) || 'Worker error'); };
-  w.postMessage({ type: 'start', files });
+  w.postMessage({ type: 'start', files: sent });
 }
 // Après une annulation ou une erreur : retour au bilan affiché s'il y en a un (ajout d'un dossier), sinon à l'accueil.
 function back() { show(state.reports ? 'report' : 'intro'); }

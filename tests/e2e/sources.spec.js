@@ -249,3 +249,33 @@ test('réajouter un dossier dont une session a grandi : pas de double comptage',
   const { stats } = JSON.parse(readFileSync(await json.path(), 'utf8'));
   expect(stats.volume.sessions).toBe(7);
 });
+
+// Issue #2, point 3 : ajouter Claude après Codex ne relit que Claude ; le bilan Codex et ses illisibles restent.
+test('ajouter Claude après Codex : seul Claude est relu', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__starts = [];
+    const post = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (m, ...rest) {
+      if (m && m.type === 'start') window.__starts.push(m.files.map((f) => f.tool));
+      return post.call(this, m, ...rest);
+    };
+  });
+  await stubPicker(page, CODEX, CLAUDE);
+  await page.goto('/');
+  await page.click('#pick');
+  await expect(page.locator('#card svg')).toContainText('CLPN', { timeout: 30_000 });
+  await page.click('#add');
+  await expect(page.locator('#tools button')).toHaveText(['Claude Code · 7 sessions', 'Codex · 2 sessions'], { timeout: 30_000 });
+  const starts = await page.evaluate(() => window.__starts);
+  expect(starts).toHaveLength(2);
+  expect(starts[1].length).toBeGreaterThan(0);
+  expect(starts[1].every((tool) => tool === 'claude')).toBe(true);
+  await page.locator('#tools button').nth(1).click();
+  await expect(page.locator('#card svg')).toContainText('CLPN');
+  await expect(page.locator('#coverage')).toContainText('illisibles : 1');
+  // Review Focus 2 : le reçu exporté garde les illisibles de Codex, non relu.
+  const [json] = await Promise.all([page.waitForEvent('download'), page.click('#json')]);
+  const { coverage } = JSON.parse(readFileSync(await json.path(), 'utf8'));
+  expect(coverage.unreadable).toBe(1);
+  expect(coverage.codex).toBe(5);
+});

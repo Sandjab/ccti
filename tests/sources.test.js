@@ -174,3 +174,24 @@ test('une session Codex dans deux dossiers d\'un même lot : une seule retenue, 
   assert.deepEqual(items.map((o) => o.file), [b.file]);
   assert.equal(coverage([a, b], items, dups).duplicates, 1);
 });
+
+// Issue #2, point 3 : un ajout ne relit que les outils touchés ; les autres gardent bilan et illisibles.
+import { mergeRuns } from '../src/sources.js';
+
+test('mergeRuns : l\'outil non touché garde son bilan et ses illisibles, archives comprises', () => {
+  const prev = { reports: { claude: 'C0', codex: 'X0' }, unreadable: { claude: 2, codex: 1, compressed: 3 } };
+  const next = { reports: { claude: 'C1' }, unreadable: {} };
+  assert.deepEqual(mergeRuns(prev, next, new Set(['claude'])), { reports: { claude: 'C1', codex: 'X0' }, unreadable: { codex: 1, compressed: 3 } });
+});
+
+// Review Focus 1 : un outil relu prend ses illisibles du nouveau résultat, même à zéro.
+test('mergeRuns : un outil relu ne garde aucun illisible de l\'ancien résultat', () => {
+  const prev = { reports: { codex: 'X0' }, unreadable: { codex: 4, compressed: 1 } };
+  const next = { reports: { codex: 'X1' }, unreadable: { compressed: 2 } };
+  assert.deepEqual(mergeRuns(prev, next, new Set(['codex'])), { reports: { codex: 'X1' }, unreadable: { compressed: 2 } });
+});
+
+test('mergeRuns : premier dépôt, le nouveau résultat tel quel', () => {
+  const next = { reports: { claude: 'C1' }, unreadable: { claude: 1 } };
+  assert.deepEqual(mergeRuns(null, next, new Set(['claude'])), { reports: { claude: 'C1' }, unreadable: { claude: 1 } });
+});

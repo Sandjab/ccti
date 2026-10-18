@@ -74,3 +74,21 @@ export function coverage(entries, items, dups = []) {
   }
   return c;
 }
+
+// Catégories d'illisibles du reçu, par outil.
+const UNREADABLE = { claude: ['claude'], codex: ['codex', 'compressed'] };
+
+// Un ajout ne relit que les outils touchés : bilans et illisibles des autres outils sont repris du
+// résultat précédent (spec issue #2 § 4). prev nul : premier dépôt.
+export function mergeRuns(prev, next, touched) {
+  if (!prev) return { reports: next.reports, unreadable: next.unreadable || {} };
+  const reports = {}, unreadable = {};
+  for (const [tool, r] of Object.entries(prev.reports)) if (!touched.has(tool)) reports[tool] = r;
+  for (const [tool, cats] of Object.entries(UNREADABLE)) {
+    if (touched.has(tool)) continue;
+    for (const k of cats) if (prev.unreadable && prev.unreadable[k]) unreadable[k] = prev.unreadable[k];
+  }
+  Object.assign(reports, next.reports);
+  Object.assign(unreadable, next.unreadable || {});
+  return { reports, unreadable };
+}
