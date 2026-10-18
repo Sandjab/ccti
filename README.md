@@ -82,8 +82,8 @@ Letters, in order: **C**ontrol or **A**utonomy (permission modes, interruptions,
 ## Privacy, verifiably
 
 - No request leaves the page after it loads. Open your browser's Network tab and watch nothing happen.
-- Only counters are kept: no prompt, no answer, no file path. The exported JSON is numbers and short
-  names (models, tools, project folder names). A test enforces it.
+- Only counters are kept: no prompt, no answer, no file path. The exported JSON is numbers and names:
+  models, tools, and your project folder names as they are (the last segment only). A test enforces it.
 - No cookie, no analytics, no remote font. The offline file works with the network cable unplugged.
 - Subagent transcripts are counted and billed, but never read as *your* messages: Claude wrote those prompts.
 

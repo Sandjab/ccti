@@ -82,7 +82,8 @@ outils refusés), **V**erbeux ou **L**aconique (longueur médiane de vos message
 
 - Aucune requête ne quitte la page après son chargement. Ouvrez l'onglet Réseau et regardez : rien.
 - Seuls des compteurs sont conservés : aucun prompt, aucune réponse, aucun chemin. Le JSON exporté ne
-  contient que des nombres et des noms courts (modèles, outils, noms de dossiers). Un test l'impose.
+  contient que des nombres et des noms : modèles, outils, et vos noms de dossiers de projets tels quels
+  (le dernier segment seulement). Un test l'impose.
 - Pas de cookie, pas d'analytics, pas de police distante. Le fichier hors ligne marche câble débranché.
 - Les transcriptions des sous-agents sont comptées et facturées, jamais lues comme *vos* messages :
   ces prompts-là, c'est Claude qui les a écrits.
