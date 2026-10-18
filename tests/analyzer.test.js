@@ -230,3 +230,12 @@ test('gaspillage : gros contextes, compactions, cache reconstruit après une pau
   assert.equal(w.cacheRebuildExcessUsd, 0.4);  // (50 000 + 20 000) × (6,25 − 0,5) = 402 500 µ$
   assert.ok(w.costOver150kShare > 0 && w.costOver150kShare < 1);
 });
+
+// CXTI facture aux prix OpenAI : la grille doit pouvoir remplacer celle d'Anthropic.
+test('une grille de prix injectée remplace celle de Claude', () => {
+  const a = new Analyzer({ costUsd: (u, model) => (model === 'gpt-x' ? u.output / 1000 : null) });
+  a.beginFile({ project: 'p', kind: 'main', sessionId: 's' });
+  a.feedLine(JSON.stringify({ type: 'assistant', timestamp: '2026-10-05T10:00:00Z', requestId: 'r', message: { id: 'm', model: 'gpt-x', usage: { output_tokens: 1500 }, content: [] } }));
+  a.endFile();
+  assert.equal(a.result().bill.costUsd, 1.5);
+});

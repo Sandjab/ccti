@@ -49,7 +49,9 @@ function textOf(content) {
 const top = (map, n) => [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
 
 export class Analyzer {
-  constructor() {
+  constructor(opts = {}) {
+    // grille de prix : celle d'Anthropic par défaut ; CXTI passe celle d'OpenAI (spec CXTI § 4.4)
+    this.costUsd = opts.costUsd || costUsd;
     this.s = {
       sessions: 0, ghostSessions: 0, projects: new Map(), humanMessages: 0, assistantTurns: 0,
       toolCalls: 0, toolsByName: new Map(), subagents: 0, subagentTurns: 0, days: new Map(),
@@ -110,7 +112,7 @@ export class Analyzer {
     }
   }
 
-  #touch(ts) {
+  _touch(ts) {
     const f = this.f;
     if (Number.isNaN(ts)) return;
     // min / max : les lignes d'une session reprise ne sont pas toujours dans l'ordre chronologique
@@ -124,7 +126,7 @@ export class Analyzer {
     const c = m.content;
     const blocks = typeof c === 'string' ? [{ type: 'text', text: c }] : Array.isArray(c) ? c : null;
     if (!blocks) return;
-    this.#touch(ts);
+    this._touch(ts);
     const results = blocks.filter((b) => b && b.type === 'tool_result');
     if (results.length) {
       for (const r of results) {
@@ -143,12 +145,18 @@ export class Analyzer {
     const slash = SLASH_COMMAND.exec(raw);
     if (slash) { inc(s.slashCommands, slash[1].trim()); return; }
     if (INTERRUPTED.test(raw)) { s.interruptions++; if (INTERRUPTED_FOR_TOOL.test(raw)) s.interruptionsForTool++; return; }
+    if (this._human(raw, ts)) inc(s.permissionModes, f.permissionMode);
+  }
+
+  // Message humain reconnu comme tel par le lecteur de format : comptages communs à Claude Code
+  // et Codex. Renvoie false si le texte nettoyé est vide (rien n'est compté).
+  _human(raw, ts) {
+    const s = this.s, f = this.f;
     const clean = cleanText(raw);
-    if (!clean) return;
+    if (!clean) return false;
     s.humanMessages++; f.humanMessages++;
     s.cleanLengths.push(clean.length); s.humanChars += clean.length;
     if (f.firstHumanLen < 0) f.firstHumanLen = clean.length;
-    inc(s.permissionModes, f.permissionMode);
     if (!Number.isNaN(ts)) {
       const d = new Date(ts), h = d.getHours(), day = dayKey(d);
       s.byHour[h]++; s.byWeekday[d.getDay()]++; inc(s.days, day);
@@ -166,13 +174,28 @@ export class Analyzer {
     if (matchesAny(HUMAN_THANKS, clean)) s.humanThanks++;
     if (matchesAny(HUMAN_DOUBLE_MARKS, clean)) s.humanDoubleMarks++;
     f.lastHumanNegative = no || caps || swear;
+    return true;
   }
+
+  // Texte d'une réponse du modèle (sessions principales seulement).
+  _assistantText(text) {
+    const s = this.s;
+    if (this.f.kind !== 'main') return;
+    s.assistantChars += text.length;
+    if (matchesAny(CLAUDE_AGREED, text)) s.claudeAgreed++;
+    if (ABSOLUTELY_RIGHT.test(text)) s.absolutelyRight++;
+    if (matchesAny(CLAUDE_APOLOGIZED, text)) s.claudeApologized++;
+  }
+
+  _tool(name) { this.s.toolCalls++; inc(this.s.toolsByName, name); }
+
+  _command(cmd) { for (const k of Object.keys(DANGER)) if (DANGER[k].test(cmd)) this.s[k]++; }
 
   #assistant(o, ts) {
     const s = this.s, f = this.f, m = o.message;
     if (!m || typeof m !== 'object') return;
     if (m.model === '<synthetic>') return; // écrit par Claude Code (erreur d'API, coupure), pas par un modèle
-    this.#touch(ts);
+    this._touch(ts);
     if (!Number.isNaN(ts)) f.lastAssistantTs = ts;
     const model = typeof m.model === 'string' && m.model ? m.model : 'unknown';
     const key = typeof m.id === 'string' ? `${m.id}:${o.requestId || ''}` : null;
@@ -207,20 +230,13 @@ export class Analyzer {
     if (!Array.isArray(m.content)) return;
     for (const b of m.content) {
       if (!b || typeof b !== 'object') continue;
-      if (b.type === 'text' && typeof b.text === 'string') {
-        if (f.kind !== 'main') continue;
-        s.assistantChars += b.text.length;
-        if (matchesAny(CLAUDE_AGREED, b.text)) s.claudeAgreed++;
-        if (ABSOLUTELY_RIGHT.test(b.text)) s.absolutelyRight++;
-        if (matchesAny(CLAUDE_APOLOGIZED, b.text)) s.claudeApologized++;
-      } else if (b.type === 'tool_use') {
+      if (b.type === 'text' && typeof b.text === 'string') this._assistantText(b.text);
+      else if (b.type === 'tool_use') {
         const name = typeof b.name === 'string' ? b.name : 'unknown';
-        s.toolCalls++; inc(s.toolsByName, name);
+        this._tool(name);
         if (name === 'AskUserQuestion') { if (f.kind === 'main') s.questionsAsked++; f.askIds.add(b.id); }
         else if (name === 'EnterPlanMode' || name === 'ExitPlanMode') f.planned = true;
-        else if (name === 'Bash' && b.input && typeof b.input.command === 'string') {
-          for (const k of Object.keys(DANGER)) if (DANGER[k].test(b.input.command)) s[k]++;
-        }
+        else if (name === 'Bash' && b.input && typeof b.input.command === 'string') this._command(b.input.command);
       }
     }
   }
@@ -283,7 +299,7 @@ export class Analyzer {
     const byModel = {};
     let costTotal = 0, unpriced = 0;
     for (const [name, u] of s.byModel) {
-      const c = costUsd(u, name);
+      const c = this.costUsd(u, name);
       if (c === null) unpriced += u.input + u.output + u.cacheRead + u.cacheWrite; else costTotal += c; // cacheWrite inclut cacheWrite1h
       byModel[name] = { ...u, costUsd: c === null ? 0 : round2(c) };
     }
