@@ -6,6 +6,8 @@ import { costUsd } from './pricing.js';
 
 const NEEDLES = ['"session_meta"', '"turn_context"', '"response_item"', '"event_msg"', '"compacted"'];
 const REJECTED = /rejected by user/i;
+// Contexte injecté par Codex sous forme de message utilisateur (AGENTS.md, environnement) : pas l'humain.
+const INJECTED = /^\s*(?:<environment_context>|<user_instructions>|# AGENTS\.md instructions)/;
 const INTERNAL_THREADS = new Set(['guardian_review', 'memory_consolidation']);
 const INTERNAL_SUBAGENTS = new Set(['compact', 'memory_consolidation']);
 const ZERO = { input: 0, cached: 0, cacheWrite: 0, output: 0 };
@@ -120,7 +122,11 @@ export class CodexAnalyzer extends Analyzer {
     switch (p.type) {
       case 'task_started': f.turnMode = null; return;
       // une seule source de message humain par mode d'historique (spec CXTI § 2.4)
-      case 'user_message': if (f.historyMode === 'legacy' && typeof p.message === 'string') this.#human(p.message, ts); return;
+      case 'user_message':
+        if (f.historyMode !== 'legacy' || typeof p.message !== 'string') return;
+        if ((p.kind && p.kind !== 'plain') || INJECTED.test(p.message)) return;
+        this.#human(p.message, ts);
+        return;
       case 'item_completed': if (f.historyMode === 'paginated' && p.item && p.item.type === 'UserMessage') this.#human(textOf(p.item.content, 'text'), ts); return;
       case 'token_count': this.#tokens(p.info, ts); return;
       case 'task_complete': if (f.kind === 'main' && typeof p.duration_ms === 'number') s.claudeWorkMs += p.duration_ms; return;

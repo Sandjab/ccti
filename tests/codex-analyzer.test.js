@@ -151,3 +151,18 @@ test('mesures sans équivalent Codex : null', () => {
   assert.equal(stats.control.slashCommands, null);
   for (const k of ['turnsOver150k', 'turnsOver150kShare', 'costOver150kUsd', 'costOver150kShare', 'cacheRebuilds', 'cacheRebuildsShortPause', 'cacheRebuildExcessUsd']) assert.equal(w[k], null, k);
 });
+
+// Des versions de Codex ont écrit AGENTS.md et le contexte d'environnement comme user_message :
+// ce n'est pas l'humain qui parle, et ces textes longs feraient passer la session pour planifiée.
+test('contexte injecté en user_message : pas un message humain', () => {
+  const r = analyzeLines([
+    ['session_meta', { cwd: '/x/p', source: 'cli', thread_source: 'user', history_mode: 'legacy' }],
+    ['event_msg', { type: 'user_message', message: '<environment_context>\n  <cwd>/x/p</cwd>\n</environment_context>', kind: 'environment_context' }],
+    ['event_msg', { type: 'user_message', message: '# AGENTS.md instructions for /x/p\n\n<INSTRUCTIONS>\n' + 'Règle. '.repeat(120) + '\n</INSTRUCTIONS>' }],
+    ['event_msg', { type: 'user_message', message: '<user_instructions>\nSois bref.\n</user_instructions>' }],
+    ['event_msg', { type: 'user_message', message: 'lance les tests', kind: 'plain' }],
+  ]);
+  assert.equal(r.volume.humanMessages, 1);
+  assert.equal(r.volume.medianCleanLength, 'lance les tests'.length);
+  assert.equal(r.control.plannedSessions, 0);
+});

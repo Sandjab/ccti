@@ -36,3 +36,12 @@ test('les dictionnaires CCTI d\'origine ne sont pas modifiés', () => {
   assert.equal(fr.ui.title, 'CCTI');
   assert.ok(en.card.agreed.includes('Claude'));
 });
+
+// Le diagnostic CXTI ne parle ni d'Anthropic ni des modèles Claude ; seule la mention
+// d'indépendance du pied de page cite Anthropic, à dessein.
+test('aucun texte CXTI ne cite Anthropic ou un modèle Claude, hors mention d\'indépendance', () => {
+  for (const lang of ['fr', 'en']) {
+    const { footer, ...ui } = LANGS[lang].ui;
+    for (const s of all({ ...LANGS[lang], ui })) assert.ok(!/anthropic|opus|sonnet|fable|haiku/i.test(s), `${lang} : ${s}`);
+  }
+});

@@ -23,12 +23,17 @@ export const PRICES = [
 ];
 
 // Un préfixe couvre le nom exact ou ses variantes « préfixe-… » (gpt-5.2 → gpt-5.2-codex),
-// jamais « gpt-5 » → « gpt-5.7 » : un modèle inconnu reste non tarifé. Le plus long gagne.
+// jamais « gpt-5 » → « gpt-5.7 », ni une variante -mini, -nano ou -pro, qui a son propre prix :
+// un modèle inconnu reste non tarifé. Le plus long gagne.
 export function priceFor(model) {
   const m = String(model ?? '').toLowerCase();
   let best = null;
-  for (const p of PRICES) if ((m === p[0] || m.startsWith(p[0] + '-')) && (!best || p[0].length > best[0].length)) best = p;
-  return best ? { input: best[1], cacheRead: best[2], cacheWrite: best[3], output: best[4] } : null;
+  for (const p of PRICES) {
+    const variant = m.startsWith(p[0] + '-') && !/-(?:mini|nano|pro)(?:-|$)/.test(m.slice(p[0].length));
+    if ((m === p[0] || variant) && (!best || p[0].length > best[0].length)) best = p;
+  }
+  // sans prix d'écriture en cache publié, OpenAI facture l'écriture au tarif d'entrée
+  return best ? { input: best[1], cacheRead: best[2], cacheWrite: best[3] || best[1], output: best[4] } : null;
 }
 
 export function costUsd(usage, model) {

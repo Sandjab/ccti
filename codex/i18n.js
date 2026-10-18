@@ -35,6 +35,10 @@ const OVERRIDES = {
       wasteNote: "Un gros contexte n'est pas du gaspillage en soi : il est repayé à chaque échange. /compact ou une nouvelle session allègent la note.",
       compressedSkipped: 'Sessions compressées ignorées (zstd -d pour les inclure)',
     },
+    observations: {
+      cost: "Équivalent API : {n}. Votre abonnement est la meilleure affaire de votre vie, et OpenAI le sait.",
+      models: "{n} modèles traversés. GPT-5, Codex, mini… Vous n'êtes resté fidèle à personne.",
+    },
   },
   en: {
     ui: {
@@ -55,6 +59,10 @@ const OVERRIDES = {
       billDisclaimer: "Estimate at OpenAI's public API prices (short context), cache included. Your subscription does not bill this way.",
       wasteNote: 'A large context is not waste in itself: it is paid again on every exchange. /compact or a fresh session lighten the bill.',
       compressedSkipped: 'Compressed sessions skipped (zstd -d to include them)',
+    },
+    observations: {
+      cost: 'API equivalent: {n}. Your subscription is the best deal of your life, and OpenAI knows it.',
+      models: '{n} models over the period. GPT-5, Codex, mini… You stayed loyal to no one.',
     },
   },
 };
