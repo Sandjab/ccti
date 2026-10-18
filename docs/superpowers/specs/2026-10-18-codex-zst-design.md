@@ -23,6 +23,9 @@ les `.jsonl`. Aucune requête réseau : le décodeur est un fichier du dépôt.
    « archives .jsonl.zst décompressées ». Un `.zst` illisible quitte cette catégorie pour « illisibles ».
 4. Validation finale sur de vrais `.jsonl.zst` Codex par Jean-Paul, depuis un autre poste, avant de
    fermer l'issue #1. Pas de commentaire sur l'issue sans son accord.
+5. Doublons : `zstd -d` garde l'archive. Quand `rollout-X.jsonl` et `rollout-X.jsonl.zst` sont tous deux
+   présents (même dépôt ou « Ajouter un dossier »), **le `.jsonl` l'emporte** : l'archive n'est pas lue,
+   et le reçu la range dans une nouvelle catégorie « archives déjà décompressées » (clé `duplicates`).
 
 ### Constaté pendant le brainstorm (essai jetable, hors dépôt)
 
@@ -50,8 +53,9 @@ les `.jsonl`. Aucune requête réseau : le décodeur est un fichier du dépôt.
   - ajoute `vendor/fzstd.js` à la liste `worker`, avant `src/worker-core.js` ;
   - `wrap()` sait réécrire deux formes d'export de plus, celles de fzstd :
     `export var X = …` (→ `var X = …`, X exporté) et `export { A, B };` (ligne retirée, A et B exportés) ;
-  - `modName()` donne un nom distinct à `vendor/fzstd.js` (aujourd'hui seul le préfixe `src/` est retiré,
-    le nom `__m_vendor_fzstd` convient).
+  - `wrap()`, `modName()` et `resolveRel()` passent dans `scripts/lib/bundle.mjs` pour être testés sans
+    lancer l'assemblage (même usage que `scripts/lib/walk.mjs`, partagé par le CLI et les tests) ;
+    `vendor/fzstd.js` y reçoit le nom `__m_vendor_fzstd`, sans changement de `modName()`.
   - Le build échoue si une ligne `export` reste non réécrite (garde-fou contre une forme inconnue).
 - CI (`.github/workflows`) : l'étape « Assemble site » copie aussi `vendor/*.js` dans `_site/vendor/`.
 
@@ -74,6 +78,12 @@ les `.jsonl`. Aucune requête réseau : le décodeur est un fichier du dépôt.
 - `src/sources.js` :
   - `addBatch` compte les `.zst` dans `added` (ils sont lisibles) ;
   - `coverage` range un item `zst` dans `compressed`, les autres dans leur outil.
+- Doublons (décision 5), par `sessionId`, seulement entre les deux formes (`.jsonl` / `.jsonl.zst`) :
+  - `codex/files.js` (`classify`) : dans un même lot, un `.zst` dont le `.jsonl` est présent est écarté ;
+  - `addBatch` : une archive dont la session est déjà lue en `.jsonl` n'est pas ajoutée ; un `.jsonl`
+    qui arrive après son archive la remplace dans les items ;
+  - `coverage` : un `rollout-*.jsonl.zst` examiné mais absent des items, dont le `sessionId` est lu en
+    `.jsonl`, compte dans `duplicates`. La somme des catégories reste le nombre de fichiers examinés.
 - `src/worker-core.js` : `unreadable` est indexé par **catégorie du reçu** : `compressed` pour un item
   `zst`, sinon l'outil (`claude`, `codex`).
 - `src/main.js` (`receipt`) : pour chaque clé `k` de `unreadable`, `c[k] -= unreadable[k]` ;
@@ -82,6 +92,8 @@ les `.jsonl`. Aucune requête réseau : le décodeur est un fichier du dépôt.
 ## 5. Textes
 
 - `ui.covCompressed` : FR « archives .jsonl.zst décompressées », EN « decompressed .jsonl.zst archives ».
+- `ui.covDuplicates` (nouveau) : FR « archives déjà décompressées », EN « already decompressed archives »,
+  affiché juste après `covCompressed`.
 - `ui.noFiles` et `ui.nothingAdded` (FR, EN) : la consigne « zstd -d » disparaît.
 - `labels.compressedSkipped` (`codex/i18n.js`) : supprimé.
 - README (EN, FR) : « compressed `.jsonl.zst` files are counted, not read » devient : ils sont
@@ -111,6 +123,8 @@ Unitaires :
 - Un `.zst` corrompu ou tronqué : compté dans `unreadable.compressed`, l'analyse continue et les
   autres fichiers sont lus.
 - `codex/files.js`, `src/sources.js` : `zst: true`, `added` les compte, `coverage` les range dans `compressed`.
+- Doublons : même lot, archive puis `.jsonl` (ajout), `.jsonl` puis archive (ajout) ; une seule session
+  lue à chaque fois, `duplicates` à 1, somme des catégories égale à `examined`.
 - `scripts/build.mjs` : `wrap()` réécrit `export var` et `export { … };` ; le bundle du worker
   évalue `Decompress` ; une forme d'export inconnue fait échouer le build.
 - `vendor/fzstd.js` : empreinte du corps égale à celle de `fzstd@0.1.1`.
@@ -123,7 +137,7 @@ E2E (page servie et `dist/ccti.html`) :
 - Ajout d'un dossier ne contenant qu'un vrai `.zst` après un dossier Claude : le sélecteur apparaît
   avec un bilan Codex d'une session (remplace le test « compressé seulement : message zstd -d »).
 - Reçu sur `tests/fixtures-codex` : « archives .jsonl.zst décompressées : 0 », « illisibles : 1 » ;
-  JSON `compressed: 0, unreadable: 1`, `examined` inchangé (9).
+  JSON `compressed: 0, duplicates: 0, unreadable: 1`, `examined` inchangé (9).
 - `dist/ccti.html` : un vrai `.zst` est lu dans le fichier autonome (worker Blob), sans requête externe.
 
 Critère de fin : `npm test` et `npm run e2e` verts, CI verte, page en ligne qui sert `vendor/fzstd.js` (200),
