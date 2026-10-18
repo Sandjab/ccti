@@ -66,12 +66,15 @@ export const HUMAN_DOUBLE_MARKS = [/!{2,}|\?{2,}/];
 export const TOOL_DENIED = /The user doesn't want to proceed with this tool use/;
 export const AUTO_MODE_BLOCK = /was denied by the Claude Code auto mode classifier/;
 
+// Options globales de git entre `git` et la sous-commande : -C <dossier>, -c <clé=valeur> (issue #8).
+const GIT = String.raw`git(?:\s+-[Cc]\s+\S+)*\s+`;
+
 export const DANGER = {
   rmRf: /\brm\s+(?:-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r)\b/i,
-  forcePush: /git\s+push\b[^\n|;&]*(?:--force\b|-f\b|--force-with-lease\b)/,
-  resetHard: /git\s+reset\s+--hard\b/,
+  forcePush: new RegExp(String.raw`${GIT}push\b[^\n|;&]*(?:--force\b|-f\b|--force-with-lease\b)`),
+  resetHard: new RegExp(String.raw`${GIT}reset\s+--hard\b`),
   sudo: /\bsudo\b/,
-  gitCommits: /git\s+commit\b/,
+  gitCommits: new RegExp(String.raw`${GIT}commit\b`),
 };
 
 export function matchesAny(list, text) {

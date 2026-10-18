@@ -79,3 +79,14 @@ test('DANGER', () => {
   assert.ok(DANGER.gitCommits.test('git commit -m "x"'));
   assert.ok(!DANGER.gitCommits.test('git log'));
 });
+
+// Issue #8 : les agents écrivent souvent `git -C <dossier> …` ou `git -c clé=valeur …` ; ces options
+// globales ne doivent pas faire manquer un push forcé, un reset --hard ni un commit.
+test('options globales de git : push forcé, reset --hard et commit reconnus', () => {
+  assert.ok(DANGER.forcePush.test('git -C repo push --force origin main'));
+  assert.ok(DANGER.forcePush.test('git -c core.sshCommand=ssh -C /tmp/x push -f'));
+  assert.ok(!DANGER.forcePush.test('git -C repo push origin main'));
+  assert.ok(DANGER.resetHard.test('git -C repo reset --hard'));
+  assert.ok(DANGER.gitCommits.test('git -c user.name=x commit -m y'));
+  assert.ok(!DANGER.gitCommits.test('git -C repo log'));
+});
