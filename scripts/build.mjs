@@ -1,6 +1,6 @@
 // scripts/build.mjs — inline CSS + modules ES (réécrits en IIFE) → dist/ccti.html (spec § 7.3).
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import path from 'node:path';
+import { wrap } from './lib/bundle.mjs';
 
 const SHARED = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/profile.js', 'src/i18n/fr.js', 'src/i18n/en.js',
   'codex/i18n.js', 'src/i18n.js', 'src/card.js', 'src/render.js'];
@@ -8,27 +8,9 @@ const SHARED = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/pro
 const TARGETS = [
   { html: 'index.html', out: 'dist/ccti.html', css: 'src/styles.css', script: 'src/main.js',
     modules: [...SHARED, 'src/files.js', 'codex/files.js', 'src/sources.js', 'src/demo.js', 'codex/demo.js', 'src/worker-factory.js', 'src/main.js'],
-    worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'codex/pricing.js', 'codex/analyzer.js', 'src/worker-core.js', 'src/worker.js'] },
+    worker: ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'codex/pricing.js', 'codex/analyzer.js', 'vendor/fzstd.js', 'src/worker-core.js', 'src/worker.js'] },
 ];
 
-const modName = (p) => '__m_' + p.replace(/^src\//, '').replace(/\.js$/, '').replace(/[^a-zA-Z0-9]/g, '_');
-const resolveRel = (file, from) => path.posix.normalize(path.posix.join(path.posix.dirname(file), from));
-
-function wrap(file, src) {
-  const names = [];
-  let body = src;
-  body = body.replace(/^export default /m, () => { names.push('default'); return 'const __default = '; });
-  body = body.replace(/^export (const|let|function|class|async function) (\w+)/gm, (_, kw, name) => { names.push(name); return `${kw} ${name}`; });
-  body = body.replace(/^import (\w+) from '([^']+)';?/gm, (_, name, from) => `const ${name} = ${modName(resolveRel(file, from))}.default;`);
-  body = body.replace(/^import \{([^}]+)\} from '([^']+)';?/gm, (_, list, from) => {
-    const ids = list.split(',').map((s) => s.trim()).filter(Boolean).map((s) => s.replace(/\s+as\s+/, ': '));
-    return `const { ${ids.join(', ')} } = ${modName(resolveRel(file, from))};`;
-  });
-  body = body.replace(/function createModuleWorker\(\) \{\n[\s\S]*?\n\}/, "function createModuleWorker() { throw new Error('bundled: no module worker'); }");
-  if (/\bimport\.meta\b/.test(body)) throw new Error(`${file}: import.meta interdit dans le bundle`);
-  const ret = names.map((n) => (n === 'default' ? 'default: __default' : n)).join(', ');
-  return `const ${modName(file)} = (() => {\n${body}\nreturn { ${ret} };\n})();\n`;
-}
 async function bundle(list) { let out = ''; for (const f of list) out += wrap(f, await readFile(f, 'utf8')); return out; }
 const safe = (s) => s.replace(/<\/script/gi, '<\\/script');
 

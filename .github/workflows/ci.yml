@@ -36,6 +36,7 @@ jobs:
           cp assets/card-light.png _site/assets/
           cp dist/ccti.html _site/ccti.html
           mkdir -p _site/codex && cp codex/*.js _site/codex/
+          mkdir -p _site/vendor && cp vendor/*.js _site/vendor/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
