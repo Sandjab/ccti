@@ -41,7 +41,7 @@ export const OBSERVATIONS = [
   { id: 'streak', fmt: 'int', when: (s) => s.volume.longestStreakDays >= 14, n: (s) => s.volume.longestStreakDays },
   { id: 'projects', fmt: 'int', when: (s) => s.volume.projects >= 30, n: (s) => s.volume.projects },
   { id: 'subagents', fmt: 'int', when: (s) => s.volume.subagents >= 100, n: (s) => s.volume.subagents },
-  { id: 'questions', fmt: 'int', when: (s) => s.couple.questionsAsked >= 10 && s.couple.questionsAnswered < 0.7 * s.couple.questionsAsked, n: (s) => s.couple.questionsAsked },
+  { id: 'questions', fmt: 'int', when: (s) => s.couple.questionsAnswered !== null && s.couple.questionsAsked >= 10 && s.couple.questionsAnswered < 0.7 * s.couple.questionsAsked, n: (s) => s.couple.questionsAsked },
   { id: 'models', fmt: 'int', when: (s) => s.models.length >= 4, n: (s) => s.models.length },
   { id: 'noplan', fmt: 'int', when: (s) => s.volume.sessions >= 20 && s.control.plannedSessions / s.volume.sessions < 0.05, n: (s) => s.control.plannedSessions },
   { id: 'patience', fmt: 'sec', when: (s) => s.couple.patienceMedianSec > 0 && s.couple.patienceMedianSec <= 20, n: (s) => s.couple.patienceMedianSec },

@@ -1,6 +1,10 @@
 // src/render.js — DOM du bilan (spec § 2, état 3). Une seule teinte pour les barres (skill dataviz).
 import { t, fmtInt, fmtPct, fmtUsd, fmtN, fmtDay, fmtMinutes } from './i18n.js';
 
+// Préfixe des illustrations : '' pour CCTI, '../' pour la page CXTI servie depuis codex/.
+let assetBase = '';
+export function setAssetBase(base) { assetBase = base; }
+
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -32,7 +36,7 @@ export function diagnosisTexts(profile, lang) {
 export function typeImage(code, lang, attrs = {}) {
   const img = h('img', { alt: `${t(lang, `types.${code}.name`)} (${code})`, width: 800, height: 800, decoding: 'async', ...attrs });
   img.addEventListener('error', () => { img.style.display = 'none'; img.dispatchEvent(new Event('ccti:missing', { bubbles: true })); });
-  img.src = `assets/types/${lang}/${code}.webp`;
+  img.src = `${assetBase}assets/types/${lang}/${code}.webp`;
   return img;
 }
 
@@ -80,8 +84,8 @@ export function renderSections(root, stats, lang) {
       [L('humanThanks'), fmtInt(lang, c.humanThanks)], [L('humanCaps'), fmtInt(lang, c.humanCaps)],
       [L('humanSwear'), fmtInt(lang, c.humanSwear)], [L('humanDoubleMarks'), fmtInt(lang, c.humanDoubleMarks)],
       [L('interruptions'), fmtInt(lang, c.interruptions)], [L('toolDenials'), fmtInt(lang, c.toolDenials)],
-      [L('autoModeBlocks'), fmtInt(lang, c.autoModeBlocks)],
-      [L('questions'), `${fmtInt(lang, c.questionsAsked)} / ${fmtInt(lang, c.questionsAnswered)}`],
+      c.autoModeBlocks === null ? null : [L('autoModeBlocks'), fmtInt(lang, c.autoModeBlocks)],
+      [L('questions'), c.questionsAnswered === null ? fmtInt(lang, c.questionsAsked) : `${fmtInt(lang, c.questionsAsked)} / ${fmtInt(lang, c.questionsAnswered)}`],
       [L('rageQuits'), fmtInt(lang, c.rageQuits)], [L('talkRatio'), fmtPct(lang, c.talkRatio)],
       [L('patience'), fmtN(lang, 'sec', c.patienceMedianSec)],
       c.modelRefusalFallbacks ? [L('modelRefusalFallbacks'), fmtInt(lang, c.modelRefusalFallbacks)] : null,
@@ -96,6 +100,7 @@ export function renderSections(root, stats, lang) {
       [L('longestSession'), t(lang, 'labels.longestSessionValue', { n: fmtInt(lang, v.longestSession.humanMessages), duration: fmtMinutes(lang, v.longestSession.durationMin), project: v.longestSession.project })],
       [L('claudeWork'), fmtMinutes(lang, v.claudeWorkMinutes)],
       v.corruptLines ? [L('corrupt'), fmtInt(lang, v.corruptLines)] : null,
+      v.compressedSkipped ? [L('compressedSkipped'), fmtInt(lang, v.compressedSkipped)] : null,
     ]), h('h3', { text: L('topTools') }), dl(toolRows), h('h3', { text: L('topProjects') }), dl(projRows)),
     section(t(lang, 'sections.moments'),
       h('h3', { text: L('byHour') }),
@@ -112,13 +117,13 @@ export function renderSections(root, stats, lang) {
       h('p', { text: `${L('versions')}${S}${t(lang, 'labels.versionsValue', { first: stats.versions.first || '–', last: stats.versions.last || '–', count: stats.versions.count })}` })),
     // gaspillage (spec § 4.7) : case libérée par la facture ; absent des anciens exports JSON
     ...(stats.waste ? [section(t(lang, 'sections.waste'), dl([
-      [L('turnsOver150k'), `${fmtInt(lang, stats.waste.turnsOver150k)} (${fmtPct(lang, stats.waste.turnsOver150kShare)})`],
-      [L('costOver150k'), `${fmtUsd(lang, stats.waste.costOver150kUsd)} (${fmtPct(lang, stats.waste.costOver150kShare)})`],
+      stats.waste.turnsOver150k === null ? null : [L('turnsOver150k'), `${fmtInt(lang, stats.waste.turnsOver150k)} (${fmtPct(lang, stats.waste.turnsOver150kShare)})`],
+      stats.waste.turnsOver150k === null ? null : [L('costOver150k'), `${fmtUsd(lang, stats.waste.costOver150kUsd)} (${fmtPct(lang, stats.waste.costOver150kShare)})`],
       [L('maxContext'), `${fmtInt(lang, stats.waste.maxContext)} ${L('tokens')}`],
       [L('compactions'), fmtInt(lang, stats.waste.compactions)],
-      [L('cacheRebuilds'), fmtInt(lang, stats.waste.cacheRebuilds)],
-      [L('cacheRebuildsShort'), fmtInt(lang, stats.waste.cacheRebuildsShortPause)],
-      [L('cacheRebuildExcess'), fmtUsd(lang, stats.waste.cacheRebuildExcessUsd)],
+      stats.waste.cacheRebuilds === null ? null : [L('cacheRebuilds'), fmtInt(lang, stats.waste.cacheRebuilds)],
+      stats.waste.cacheRebuilds === null ? null : [L('cacheRebuildsShort'), fmtInt(lang, stats.waste.cacheRebuildsShortPause)],
+      stats.waste.cacheRebuilds === null ? null : [L('cacheRebuildExcess'), fmtUsd(lang, stats.waste.cacheRebuildExcessUsd)],
     ]), h('p', { class: 'disclaimer', text: L('wasteNote') }))] : []),
     wide(section(t(lang, 'sections.bill'),
       h('p', { class: 'bill-total', text: `${L('billTotal')}${S}${fmtUsd(lang, b.costUsd)}` }),

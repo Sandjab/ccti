@@ -4,6 +4,7 @@ import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeAxes, typeCode, computeProfile, OBSERVATIONS, THRESHOLDS } from '../src/profile.js';
 import { analyzeDirectory } from '../scripts/lib/walk.mjs';
+import DEMO_STATS from '../src/demo.js';
 
 // Stats minimales construites à la main : tout à zéro sauf ce que le test fixe.
 function mk(over = {}) {
@@ -69,4 +70,15 @@ test('profil des fixtures', async () => {
   assert.equal(p.code, 'CLID');
   assert.deepEqual(p.observations.map((o) => o.id), ['midnight', 'caps', 'swear', 'ragequit', 'rmrf']);
   assert.equal(p.lowConfidence, false);
+});
+
+// Codex n'enregistre pas les réponses aux questions : sans cette donnée, « vous n'avez pas répondu »
+// serait une accusation inventée.
+test('observation questions : jamais quand les réponses sont inconnues (null)', () => {
+  const known = structuredClone(DEMO_STATS);
+  known.couple.questionsAsked = 40; known.couple.questionsAnswered = 5;
+  assert.ok(computeProfile(known, 99).observations.some((o) => o.id === 'questions'));
+  const unknown = structuredClone(known);
+  unknown.couple.questionsAnswered = null;
+  assert.ok(!computeProfile(unknown, 99).observations.some((o) => o.id === 'questions'));
 });

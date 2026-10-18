@@ -88,3 +88,14 @@ test('aucun texte de type ne déborde du bandeau, avec ou sans image', () => {
   }
   assert.deepEqual(wrap('a bb ccc dddd', 6), ['a bb', 'ccc', 'dddd']);
 });
+
+// La carte CXTI doit dire CXTI : le nom vient des textes, pas du code.
+test('le nom de la carte vient de ui.title', () => {
+  const saved = fr.ui.title;
+  fr.ui.title = 'XYZT';
+  try {
+    const svg = renderCard(stats, profile, { lang: 'fr' });
+    assert.ok(svg.includes('>XYZT</text>'));
+    assert.ok(!svg.includes('>CCTI</text>'));
+  } finally { fr.ui.title = saved; }
+});

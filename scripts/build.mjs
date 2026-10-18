@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const MODULES = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/profile.js', 'src/i18n/fr.js', 'src/i18n/en.js',
-  'src/i18n.js', 'src/card.js', 'src/files.js', 'src/demo.js', 'src/render.js', 'src/worker-factory.js', 'src/main.js'];
+  'src/i18n.js', 'src/card.js', 'src/files.js', 'src/demo.js', 'src/render.js', 'src/worker-factory.js', 'src/app.js', 'src/main.js'];
 const WORKER_MODULES = ['src/patterns.js', 'src/pricing.js', 'src/analyzer.js', 'src/worker-core.js', 'src/worker.js'];
 
 const modName = (p) => '__m_' + p.replace(/^src\//, '').replace(/\.js$/, '').replace(/[^a-zA-Z0-9]/g, '_');
